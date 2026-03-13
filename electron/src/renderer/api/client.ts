@@ -69,6 +69,13 @@ export const api = {
   selectStrategy: (goalId: number, strategyIndex: number) =>
     request<any>('/api/sensors/select', { method: 'POST', body: JSON.stringify({ goal_id: goalId, strategy_index: strategyIndex }) }),
 
+  // Smart input
+  smartInput: (text: string) =>
+    request<any>('/api/input', { method: 'POST', body: JSON.stringify({ text }) }),
+
+  // Tray dashboard (single call for all tray data)
+  getTrayData: () => request<any>('/api/tray'),
+
   // Health
   health: () => request<any>('/api/health'),
 };

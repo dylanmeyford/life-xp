@@ -1,20 +1,32 @@
-import { app, BrowserWindow, Tray, Menu, Notification, nativeImage } from 'electron';
+import { app, BrowserWindow, Tray, Notification, nativeImage, screen } from 'electron';
 import { spawn, ChildProcess } from 'child_process';
 import * as path from 'path';
 import * as http from 'http';
 
 const API_PORT = 8111;
 const API_URL = `http://localhost:${API_PORT}`;
-const POLL_INTERVAL = 5000; // 5 seconds
+const POLL_INTERVAL = 5000;
+
+const TRAY_WIDTH = 380;
+const TRAY_HEIGHT = 560;
 
 let mainWindow: BrowserWindow | null = null;
+let trayWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let pythonProcess: ChildProcess | null = null;
 let notificationPoller: ReturnType<typeof setInterval> | null = null;
+let isQuitting = false;
 
 const isDev = !app.isPackaged;
 
-function createWindow() {
+function getRendererURL(route: string): string {
+  if (isDev) {
+    return `http://localhost:5173/#${route}`;
+  }
+  return `file://${path.join(__dirname, '../renderer/index.html')}#${route}`;
+}
+
+function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -39,13 +51,81 @@ function createWindow() {
     mainWindow?.show();
   });
 
-  // Hide window instead of closing (tray app behavior)
   mainWindow.on('close', (e) => {
     if (!isQuitting) {
       e.preventDefault();
       mainWindow?.hide();
     }
   });
+}
+
+function createTrayWindow() {
+  trayWindow = new BrowserWindow({
+    width: TRAY_WIDTH,
+    height: TRAY_HEIGHT,
+    show: false,
+    frame: false,
+    resizable: false,
+    movable: false,
+    fullscreenable: false,
+    skipTaskbar: true,
+    transparent: true,
+    hasShadow: true,
+    alwaysOnTop: true,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+  });
+
+  // Load the tray route
+  if (isDev) {
+    trayWindow.loadURL('http://localhost:5173/#/tray');
+  } else {
+    trayWindow.loadFile(path.join(__dirname, '../renderer/index.html'), {
+      hash: '/tray',
+    });
+  }
+
+  trayWindow.on('blur', () => {
+    trayWindow?.hide();
+  });
+}
+
+function toggleTrayWindow() {
+  if (!trayWindow) return;
+
+  if (trayWindow.isVisible()) {
+    trayWindow.hide();
+    return;
+  }
+
+  positionTrayWindow();
+  trayWindow.show();
+  trayWindow.focus();
+}
+
+function positionTrayWindow() {
+  if (!tray || !trayWindow) return;
+
+  const trayBounds = tray.getBounds();
+  const windowBounds = trayWindow.getBounds();
+  const display = screen.getDisplayNearestPoint({
+    x: trayBounds.x,
+    y: trayBounds.y,
+  });
+
+  // Center horizontally under tray icon, anchor to top of screen (macOS menu bar)
+  let x = Math.round(trayBounds.x + trayBounds.width / 2 - windowBounds.width / 2);
+  let y = Math.round(trayBounds.y + trayBounds.height + 4);
+
+  // Keep within screen bounds
+  const maxX = display.workArea.x + display.workArea.width - windowBounds.width;
+  const maxY = display.workArea.y + display.workArea.height - windowBounds.height;
+  x = Math.min(Math.max(x, display.workArea.x), maxX);
+  y = Math.min(y, maxY);
+
+  trayWindow.setPosition(x, y, false);
 }
 
 function startPythonBackend() {
@@ -70,7 +150,6 @@ function startPythonBackend() {
   pythonProcess.on('exit', (code: number | null) => {
     console.log(`Python backend exited with code ${code}`);
     if (!isQuitting) {
-      // Restart after crash
       setTimeout(startPythonBackend, 2000);
     }
   });
@@ -92,7 +171,6 @@ async function waitForBackend(retries = 30): Promise<boolean> {
 }
 
 function createTray() {
-  // Simple tray icon (in production, use a proper .png icon)
   const icon = nativeImage.createFromDataURL(
     'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAYklEQVQ4T2NkoBAwUqifAacBjP///2dhYGD4D8L4NMDkGBkZ/zMxMf0H0XgNAJkOMh1uAMh0kGkwA0AuwGcAzBZCXoC5ACZHyAVgQ5A9AXIB2BRGL4ANIeQFqF4gJCckBQBKUzcAZUd1VAAAAABJRU5ErkJggg=='
   );
@@ -100,31 +178,22 @@ function createTray() {
   tray = new Tray(icon);
   tray.setToolTip('Life XP');
 
-  updateTrayMenu();
-
   tray.on('click', () => {
-    mainWindow?.show();
-    mainWindow?.focus();
+    toggleTrayWindow();
   });
-}
 
-async function updateTrayMenu() {
-  try {
-    const stats = await fetchAPI('/api/stats');
+  // Right-click shows minimal context menu
+  tray.on('right-click', () => {
+    const { Menu } = require('electron');
     const menu = Menu.buildFromTemplate([
       {
-        label: `Lv.${stats.level} ${stats.title} — ${stats.total_xp.toLocaleString()} XP`,
-        enabled: false,
-      },
-      { type: 'separator' },
-      {
-        label: 'Open Dashboard',
+        label: 'Open Full Dashboard',
         click: () => {
           mainWindow?.show();
           mainWindow?.focus();
         },
       },
-      { type: 'separator' },
+      { type: 'separator' as const },
       {
         label: 'Quit Life XP',
         click: () => {
@@ -133,10 +202,8 @@ async function updateTrayMenu() {
         },
       },
     ]);
-    tray?.setContextMenu(menu);
-  } catch {
-    // Backend not ready yet
-  }
+    tray?.popUpContextMenu(menu);
+  });
 }
 
 async function fetchAPI(endpoint: string): Promise<any> {
@@ -168,14 +235,12 @@ function startNotificationPolling() {
           });
 
           notification.on('click', () => {
-            mainWindow?.show();
-            mainWindow?.focus();
+            toggleTrayWindow();
           });
 
           notification.show();
         }
 
-        // Mark as read
         await new Promise<void>((resolve) => {
           const req = http.request(
             `${API_URL}/api/notifications/${n.id}/read`,
@@ -185,28 +250,22 @@ function startNotificationPolling() {
           req.end();
         });
       }
-
-      // Update tray menu periodically
-      updateTrayMenu();
     } catch {
       // Backend might not be ready
     }
   }, POLL_INTERVAL);
 }
 
-// Track quit state outside of app object to avoid type issues
-let isQuitting = false;
-
 app.whenReady().then(async () => {
   startPythonBackend();
   createTray();
-  createWindow();
+  createTrayWindow();
+  createMainWindow();
 
   const ready = await waitForBackend();
   if (ready) {
     console.log('Backend is ready');
     startNotificationPolling();
-    updateTrayMenu();
   } else {
     console.error('Backend failed to start');
   }
@@ -222,7 +281,6 @@ app.on('before-quit', () => {
 });
 
 app.on('window-all-closed', () => {
-  // Don't quit on macOS — keep running in tray
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -230,7 +288,7 @@ app.on('window-all-closed', () => {
 
 app.on('activate', () => {
   if (!mainWindow) {
-    createWindow();
+    createMainWindow();
   } else {
     mainWindow.show();
   }

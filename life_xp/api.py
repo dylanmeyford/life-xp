@@ -108,6 +108,104 @@ class SensorStrategySelect(BaseModel):
     strategy_index: int
 
 
+class SmartInput(BaseModel):
+    text: str
+
+
+# ── Smart Input (intent parsing + execution) ─────────────────────────
+
+@app.post("/api/input")
+async def api_smart_input(body: SmartInput):
+    """Parse natural language input, determine intent, and execute the action.
+
+    This is the main entry point for the tray text input. The user types
+    anything and the LLM figures out what to do.
+    """
+    from life_xp.coach import parse_intent, evaluate_progress
+    from life_xp.engine import (
+        create_goal, create_habit, check_habit, complete_goal,
+    )
+    from life_xp.xp import award_xp
+
+    result = await parse_intent(body.text)
+    intent = result.get("intent", "coaching")
+    data = result.get("data", {})
+    reply = result.get("reply", "")
+
+    action_result = {}
+
+    if intent == "create_goal":
+        goal_id = create_goal(
+            title=data.get("title", body.text),
+            description=data.get("description", ""),
+            category=data.get("category", "Productivity"),
+            goal_type=data.get("goal_type", "manual"),
+            xp_reward=data.get("xp_reward", 100),
+            recurrence=data.get("recurrence"),
+            target_value=data.get("target_value"),
+            unit=data.get("unit"),
+        )
+        action_result = {"goal_id": goal_id}
+
+        # If it's a non-manual goal, propose tracking strategies
+        if data.get("goal_type", "manual") != "manual":
+            from life_xp.engine import get_goal
+            from life_xp.agent.sensor_builder import propose_tracking_strategies
+            goal = get_goal(goal_id)
+            if goal:
+                strategies = await propose_tracking_strategies(goal)
+                action_result["strategies"] = strategies.get("strategies", [])
+
+    elif intent == "create_habit":
+        habit_id = create_habit(
+            title=data.get("title", body.text),
+            category=data.get("category", "Productivity"),
+            frequency=data.get("frequency", "daily"),
+            xp_per_check=data.get("xp_per_check", 25),
+        )
+        action_result = {"habit_id": habit_id}
+
+    elif intent == "check_habit":
+        habit_id = data.get("habit_id")
+        if habit_id:
+            try:
+                action_result = check_habit(habit_id)
+            except ValueError as e:
+                action_result = {"error": str(e)}
+
+    elif intent == "complete_goal":
+        goal_id = data.get("goal_id")
+        if goal_id:
+            try:
+                action_result = complete_goal(goal_id)
+            except ValueError as e:
+                action_result = {"error": str(e)}
+
+    elif intent == "progress_update":
+        goal_id = data.get("goal_id")
+        if goal_id:
+            from life_xp.engine import get_goal
+            goal = get_goal(goal_id)
+            if goal:
+                eval_result = await evaluate_progress(goal, data.get("message", body.text))
+                if eval_result.get("progressed") and eval_result.get("xp_award", 0) > 0:
+                    award_xp(eval_result["xp_award"], "goal", goal_id, f"Progress: {goal['title']}")
+                action_result = eval_result
+
+    # For ask_question and coaching, the reply itself is the result
+    elif intent == "ask_question":
+        action_result = {"answer": data.get("answer", reply)}
+
+    elif intent == "coaching":
+        action_result = {"advice": data.get("advice", reply)}
+
+    return {
+        "intent": intent,
+        "reply": reply,
+        "data": action_result,
+    }
+
+
 # ── Stats ──────────────────────────────────────────────────────────────
 
 @app.get("/api/stats")
@@ -466,6 +564,75 @@ def api_xp_history(days: int = 30):
 def api_xp_by_category():
     from life_xp.engine import get_xp_by_category
     return get_xp_by_category()
+
+
+# ── Tray Dashboard ────────────────────────────────────────────────────
+
+@app.get("/api/tray")
+def api_tray_data():
+    """Single endpoint returning everything the tray popover needs."""
+    from life_xp.xp import get_stats as _get_stats
+    from life_xp.engine import list_goals, list_habits, list_daily_tasks
+
+    stats = _get_stats()
+    goals = list_goals("active")
+    habits = list_habits()
+    tasks = list_daily_tasks()
+
+    tasks_done = sum(1 for t in tasks if t["status"] == "done")
+
+    return {
+        "stats": {
+            "total_xp": stats.total_xp,
+            "level": stats.level,
+            "xp_in_level": stats.xp_in_level,
+            "xp_for_next": stats.xp_for_next,
+            "progress_pct": stats.progress_pct,
+            "title": stats.title,
+        },
+        "goals": [
+            {
+                "id": g["id"],
+                "title": g["title"],
+                "category_icon": g.get("category_icon", "⭐"),
+                "goal_type": g.get("goal_type", "manual"),
+                "progress": (
+                    min((g.get("current_value") or 0) / g["target_value"], 1.0)
+                    if g.get("target_value")
+                    else None
+                ),
+                "target_value": g.get("target_value"),
+                "current_value": g.get("current_value"),
+                "unit": g.get("unit"),
+                "recurrence": g.get("recurrence"),
+            }
+            for g in goals[:10]
+        ],
+        "habits": [
+            {
+                "id": h["id"],
+                "title": h["title"],
+                "category_icon": h.get("category_icon", "⭐"),
+                "done_today": h.get("done_today", False),
+                "streak": h.get("streak", 0),
+                "xp_per_check": h["xp_per_check"],
+            }
+            for h in habits
+        ],
+        "daily_tasks": {
+            "done": tasks_done,
+            "total": len(tasks),
+            "items": [
+                {
+                    "id": t["id"],
+                    "title": t["title"],
+                    "status": t["status"],
+                    "xp_reward": t["xp_reward"],
+                }
+                for t in tasks[:8]
+            ],
+        },
+    }
 
 
 # ── Health Check ───────────────────────────────────────────────────────

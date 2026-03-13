@@ -318,3 +318,71 @@ def create_coaching_session(goal_id: int | None = None) -> int:
     session_id = cur.lastrowid
     conn.close()
     return session_id
+
+
+async def parse_intent(user_input: str) -> dict:
+    """Parse natural language input and determine what the user wants to do.
+
+    Returns a structured action the frontend can execute, plus a short
+    conversational reply to show the user.
+
+    Possible intents:
+    - create_goal: user wants to track something new
+    - create_habit: user wants a recurring habit
+    - check_habit: user is reporting they did a habit
+    - complete_goal: user says they finished a goal
+    - progress_update: user is reporting progress on a goal
+    - ask_question: user is asking about their stats/progress
+    - coaching: user wants advice or motivation
+    """
+    user_context = _get_user_context()
+    client = _get_client()
+
+    prompt = f"""The user typed this into their life-tracking app:
+
+"{user_input}"
+
+Their current state:
+{json.dumps(user_context, indent=2)}
+
+Determine what they want to do and respond with a JSON object:
+
+{{
+    "intent": "create_goal" | "create_habit" | "check_habit" | "complete_goal" | "progress_update" | "ask_question" | "coaching",
+    "reply": "A short, friendly response (1-2 sentences) confirming what you're doing or answering their question",
+    "data": {{}}  // structured data for the action (see below)
+}}
+
+Data fields by intent:
+- create_goal: {{"title": "...", "description": "...", "category": "Fitness|Finance|Social|Learning|Productivity|Creative|Health|Mindfulness", "goal_type": "manual|quantitative|qualitative|recurring", "xp_reward": 50-500, "recurrence": "daily|weekly|monthly"|null, "target_value": number|null, "unit": string|null}}
+- create_habit: {{"title": "...", "category": "...", "frequency": "daily|weekly", "xp_per_check": 10-50}}
+- check_habit: {{"habit_id": number, "habit_title": "matched habit name"}}
+- complete_goal: {{"goal_id": number, "goal_title": "matched goal name"}}
+- progress_update: {{"goal_id": number, "message": "what they reported"}}
+- ask_question: {{"answer": "your full answer about their stats/progress"}}
+- coaching: {{"advice": "your coaching response"}}
+
+Be smart about matching existing goals/habits by name. If the user says "I messaged a friend" and they have a goal about messaging friends, match it.
+If the input is clearly a new goal or aspiration, create it. Infer the best category and type.
+
+Only output the JSON object, nothing else."""
+
+    message = client.messages.create(
+        model=MODEL,
+        max_tokens=1024,
+        system=SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": prompt}],
+    )
+
+    try:
+        text = message.content[0].text.strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1].rsplit("```", 1)[0]
+        return json.loads(text)
+    except (json.JSONDecodeError, IndexError) as e:
+        log.error(f"Failed to parse intent: {e}")
+        return {
+            "intent": "coaching",
+            "reply": "I'm not sure what you mean. Could you rephrase that?",
+            "data": {"advice": "Try saying something like 'I want to exercise 3 times a week' or 'I meditated today'."},
+        }
