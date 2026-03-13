@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --bg-card: #1a1a2e;
+  --accent-primary: #00f0ff;
+  --accent-xp: #ffd700;
+  --accent-success: #00ff88;
+  --accent-streak: #ff6b35;
+  --accent-level: #a855f7;
+  --glow-color: #00f0ff;
+}
+
+* {
+  -webkit-app-region: no-drag;
+}
+
+body {
+  overflow-x: hidden;
+  background: var(--bg-primary);
+}
+
+/* Titlebar drag region */
+.titlebar {
+  -webkit-app-region: drag;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* XP Bar glow effect */
+.xp-bar-glow {
+  box-shadow: 0 0 10px var(--accent-primary), 0 0 20px rgba(0, 240, 255, 0.3);
+}
+
+.xp-fill {
+  background: linear-gradient(90deg, #00f0ff, #00ff88);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+  transition: width 1s ease-out;
+}
+
+/* Habit grid cell */
+.grid-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  transition: transform 0.1s;
+}
+.grid-cell:hover {
+  transform: scale(1.5);
+}
+.grid-cell-0 { background: #161b22; }
+.grid-cell-1 { background: #0e4429; }
+.grid-cell-2 { background: #006d32; }
+.grid-cell-3 { background: #26a641; }
+.grid-cell-4 { background: #39d353; }
+
+/* Card glow on hover */
+.card-glow:hover {
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+}
+
+/* Level badge hexagon */
+.level-badge {
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  background: linear-gradient(135deg, var(--accent-level), #6366f1);
+}
+
+/* Streak fire effect */
+@keyframes fireGlow {
+  0%, 100% { text-shadow: 0 0 5px #ff6b35; }
+  50% { text-shadow: 0 0 20px #ff4500, 0 0 40px #ff6b35; }
+}
+.streak-fire {
+  animation: fireGlow 1.5s ease-in-out infinite;
+}
+
+/* Toast animation */
+.toast-enter {
+  animation: slideUp 0.3s ease-out, fadeIn 0.3s ease-out;
+}
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}

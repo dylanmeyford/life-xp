@@ -17,15 +17,19 @@ def create_goal(
     unit: str | None = None,
     parent_id: int | None = None,
     due_date: str | None = None,
+    goal_type: str = "manual",
+    recurrence: str | None = None,
+    llm_context: str | None = None,
 ) -> int:
     conn = get_connection()
     cat = conn.execute("SELECT id FROM categories WHERE name = ?", (category,)).fetchone()
     cat_id = cat["id"] if cat else None
     cur = conn.execute(
         """INSERT INTO goals (title, description, category_id, parent_id, xp_reward,
-           target_value, unit, due_date)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-        (title, description, cat_id, parent_id, xp_reward, target_value, unit, due_date),
+           target_value, unit, due_date, goal_type, recurrence, llm_context)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (title, description, cat_id, parent_id, xp_reward, target_value, unit, due_date,
+         goal_type, recurrence, llm_context),
     )
     conn.commit()
     goal_id = cur.lastrowid
@@ -429,3 +433,174 @@ def get_xp_by_category() -> list[dict]:
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+# ── Daily Tasks ────────────────────────────────────────────────────────
+
+def create_daily_task(
+    title: str,
+    goal_id: int | None = None,
+    description: str = "",
+    task_date: str | None = None,
+    xp_reward: int = 25,
+    generated_by: str = "user",
+) -> int:
+    if task_date is None:
+        task_date = date.today().isoformat()
+    conn = get_connection()
+    cur = conn.execute(
+        """INSERT INTO daily_tasks (goal_id, title, description, date, xp_reward, generated_by)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (goal_id, title, description, task_date, xp_reward, generated_by),
+    )
+    conn.commit()
+    task_id = cur.lastrowid
+    conn.close()
+    return task_id
+
+
+def complete_daily_task(task_id: int) -> dict:
+    conn = get_connection()
+    task = conn.execute("SELECT * FROM daily_tasks WHERE id = ?", (task_id,)).fetchone()
+    if not task:
+        conn.close()
+        raise ValueError(f"Task {task_id} not found")
+    if task["status"] != "pending":
+        conn.close()
+        return {"already_done": True, "xp_awarded": 0}
+
+    conn.execute(
+        "UPDATE daily_tasks SET status = 'done', completed_at = datetime('now') WHERE id = ?",
+        (task_id,),
+    )
+    conn.commit()
+    conn.close()
+
+    stats = award_xp(task["xp_reward"], "goal", task["goal_id"], f"Task: {task['title']}")
+    queue_notification(
+        "xp", f"+{task['xp_reward']} XP",
+        f"Completed: {task['title']}",
+    )
+    return {"task_id": task_id, "xp_awarded": task["xp_reward"]}
+
+
+def skip_daily_task(task_id: int) -> dict:
+    conn = get_connection()
+    conn.execute("UPDATE daily_tasks SET status = 'skipped' WHERE id = ?", (task_id,))
+    conn.commit()
+    conn.close()
+    return {"task_id": task_id, "skipped": True}
+
+
+def list_daily_tasks(task_date: str | None = None) -> list[dict]:
+    if task_date is None:
+        task_date = date.today().isoformat()
+    conn = get_connection()
+    rows = conn.execute(
+        """SELECT dt.*, g.title as goal_title
+           FROM daily_tasks dt
+           LEFT JOIN goals g ON dt.goal_id = g.id
+           WHERE dt.date = ? ORDER BY dt.created_at""",
+        (task_date,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def daily_tasks_generated_today() -> bool:
+    today = date.today().isoformat()
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT COUNT(*) as cnt FROM daily_tasks WHERE date = ? AND generated_by = 'llm'",
+        (today,),
+    ).fetchone()
+    conn.close()
+    return row["cnt"] > 0
+
+
+# ── Notification Queue ─────────────────────────────────────────────────
+
+def queue_notification(
+    notification_type: str,
+    title: str,
+    message: str,
+    action_type: str | None = None,
+    action_data: str | None = None,
+):
+    conn = get_connection()
+    conn.execute(
+        """INSERT INTO notification_queue (title, message, notification_type, action_type, action_data)
+           VALUES (?, ?, ?, ?, ?)""",
+        (title, message, notification_type, action_type, action_data),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_pending_notifications(limit: int = 20) -> list[dict]:
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT * FROM notification_queue WHERE read = 0 ORDER BY created_at DESC LIMIT ?",
+        (limit,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def mark_notification_read(notification_id: int):
+    conn = get_connection()
+    conn.execute(
+        "UPDATE notification_queue SET read = 1 WHERE id = ?",
+        (notification_id,),
+    )
+    conn.commit()
+    conn.close()
+
+
+def mark_all_notifications_read():
+    conn = get_connection()
+    conn.execute("UPDATE notification_queue SET read = 1 WHERE read = 0")
+    conn.commit()
+    conn.close()
+
+
+# ── Recurring / Untracked Goals ────────────────────────────────────────
+
+def get_recurring_goals() -> list[dict]:
+    conn = get_connection()
+    rows = conn.execute(
+        """SELECT g.*, c.name as category_name, c.icon as category_icon
+           FROM goals g LEFT JOIN categories c ON g.category_id = c.id
+           WHERE g.status = 'active' AND g.recurrence IS NOT NULL
+           ORDER BY g.created_at"""
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_untracked_goals() -> list[dict]:
+    """Get active goals that have no sensor configured and haven't been attempted."""
+    conn = get_connection()
+    rows = conn.execute(
+        """SELECT g.*, c.name as category_name, c.icon as category_icon
+           FROM goals g
+           LEFT JOIN categories c ON g.category_id = c.id
+           LEFT JOIN sensor_configs sc ON sc.goal_id = g.id
+           WHERE g.status = 'active'
+             AND g.sensor_attempted = 0
+             AND sc.id IS NULL
+             AND g.goal_type != 'manual'
+           ORDER BY g.created_at"""
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def mark_sensor_attempted(goal_id: int):
+    conn = get_connection()
+    conn.execute(
+        "UPDATE goals SET sensor_attempted = 1 WHERE id = ?",
+        (goal_id,),
+    )
+    conn.commit()
+    conn.close()

@@ -41,6 +41,11 @@ CREATE TABLE IF NOT EXISTS goals (
     xp_reward INTEGER NOT NULL DEFAULT 100,
     status TEXT NOT NULL DEFAULT 'active'
         CHECK(status IN ('active', 'completed', 'abandoned', 'paused')),
+    goal_type TEXT NOT NULL DEFAULT 'manual'
+        CHECK(goal_type IN ('quantitative', 'qualitative', 'recurring', 'composite', 'manual')),
+    recurrence TEXT,
+    llm_context TEXT,
+    sensor_attempted INTEGER NOT NULL DEFAULT 0,
     target_value REAL,
     current_value REAL DEFAULT 0,
     unit TEXT,
@@ -128,6 +133,56 @@ CREATE TABLE IF NOT EXISTS events (
     event_type TEXT NOT NULL,
     payload_json TEXT NOT NULL DEFAULT '{}',
     processed INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS daily_tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    goal_id INTEGER REFERENCES goals(id),
+    title TEXT NOT NULL,
+    description TEXT,
+    date TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending'
+        CHECK(status IN ('pending', 'done', 'skipped')),
+    xp_reward INTEGER NOT NULL DEFAULT 25,
+    generated_by TEXT NOT NULL DEFAULT 'llm'
+        CHECK(generated_by IN ('llm', 'user', 'sensor')),
+    completed_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS notification_queue (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    notification_type TEXT NOT NULL DEFAULT 'info'
+        CHECK(notification_type IN ('xp', 'level_up', 'streak', 'coaching', 'goal_complete', 'sensor', 'info')),
+    action_type TEXT,
+    action_data TEXT,
+    read INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS coaching_sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    goal_id INTEGER REFERENCES goals(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS coaching_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id INTEGER NOT NULL REFERENCES coaching_sessions(id),
+    role TEXT NOT NULL CHECK(role IN ('user', 'assistant')),
+    content TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS sensor_strategies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    goal_id INTEGER NOT NULL REFERENCES goals(id) UNIQUE,
+    strategies_json TEXT NOT NULL,
+    selected INTEGER NOT NULL DEFAULT 0,
+    selected_index INTEGER,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
