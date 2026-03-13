@@ -104,21 +104,27 @@ class SensorRegistry:
 
 def _process_event(event: SensorEvent):
     """Process a sensor event — update goal progress or check habit."""
-    from life_xp.engine import update_goal_progress, check_habit
+    from life_xp.engine import update_goal_progress, check_habit, get_goal, complete_goal
 
     if event.goal_id and event.value is not None:
+        goal = get_goal(event.goal_id)
+        if goal and goal["status"] != "active":
+            return
+
         result = update_goal_progress(event.goal_id, event.value)
+
         if result.get("completed"):
             from life_xp.notifications import notify
             notify(
                 title="🎯 Goal Complete!",
                 message=f"{event.message} — +{result['xp_awarded']} XP!",
             )
+        elif goal and not goal.get("target_value"):
+            _try_llm_completion(goal, event)
 
     if event.habit_id:
         check_habit(event.habit_id)
 
-    # Log the event
     conn = get_connection()
     conn.execute(
         "INSERT INTO events (event_type, payload_json) VALUES (?, ?)",
@@ -126,3 +132,44 @@ def _process_event(event: SensorEvent):
     )
     conn.commit()
     conn.close()
+
+
+def _try_llm_completion(goal: dict, event: SensorEvent):
+    """Use LLM to evaluate whether a qualitative goal is complete based on sensor data."""
+    import os
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        return
+
+    try:
+        import anthropic
+
+        client = anthropic.Anthropic(api_key=api_key)
+        msg = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=150,
+            system="You evaluate whether a goal has been completed based on sensor data. Reply with ONLY a JSON object: {\"completed\": true/false, \"reason\": \"brief explanation\"}",
+            messages=[{
+                "role": "user",
+                "content": f'Goal: "{goal["title"]}"\nDescription: {goal.get("description", "none")}\n\nSensor detected: {event.message}\nRaw data summary: {json.dumps(event.raw_data, default=str)[:500]}\n\nHas this goal been completed?',
+            }],
+        )
+
+        response = msg.content[0].text.strip()
+        if response.startswith("```"):
+            response = response.split("\n", 1)[1].rsplit("```", 1)[0]
+        result = json.loads(response)
+
+        if result.get("completed"):
+            from life_xp.engine import complete_goal
+            from life_xp.notifications import notify
+
+            completion = complete_goal(goal["id"])
+            log.info(f"LLM auto-completed goal '{goal['title']}': {result.get('reason')}")
+            notify(
+                title="🎯 Goal Complete!",
+                message=f"{goal['title']} — +{completion['xp_awarded']} XP! ({result.get('reason', '')})",
+            )
+    except Exception as e:
+        log.error(f"LLM goal evaluation failed: {e}")

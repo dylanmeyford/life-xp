@@ -49,6 +49,8 @@ function createMainWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show();
+    mainWindow?.focus();
+    if (isDev) mainWindow?.webContents.openDevTools({ mode: 'detach' });
   });
 
   mainWindow.on('close', (e) => {
@@ -129,13 +131,16 @@ function positionTrayWindow() {
 }
 
 function startPythonBackend() {
-  const pythonCmd = isDev ? 'uvicorn' : path.join(process.resourcesPath, 'life-xp-server');
+  const projectRoot = path.join(__dirname, '../../..');
+  const pythonCmd = isDev
+    ? path.join(projectRoot, '.venv', 'bin', 'python')
+    : path.join(process.resourcesPath, 'life-xp-server');
   const args = isDev
-    ? ['life_xp.api:app', '--port', String(API_PORT), '--log-level', 'info']
+    ? ['-m', 'uvicorn', 'life_xp.api:app', '--port', String(API_PORT), '--log-level', 'info']
     : ['--port', String(API_PORT)];
 
   pythonProcess = spawn(pythonCmd, args, {
-    cwd: isDev ? path.join(__dirname, '../../..') : undefined,
+    cwd: isDev ? projectRoot : undefined,
     stdio: 'pipe',
   });
 
@@ -171,11 +176,10 @@ async function waitForBackend(retries = 30): Promise<boolean> {
 }
 
 function createTray() {
-  const icon = nativeImage.createFromDataURL(
-    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAYklEQVQ4T2NkoBAwUqifAacBjP///2dhYGD4D8L4NMDkGBkZ/zMxMf0H0XgNAJkOMh1uAMh0kGkwA0AuwGcAzBZCXoC5ACZHyAVgQ5A9AXIB2BRGL4ANIeQFqF4gJCckBQBKUzcAZUd1VAAAAABJRU5ErkJggg=='
-  );
-
+  // 22x22 template icon — macOS auto-adapts to light/dark menu bar
+  const icon = nativeImage.createEmpty();
   tray = new Tray(icon);
+  tray.setTitle('⚔️ XP');
   tray.setToolTip('Life XP');
 
   tray.on('click', () => {

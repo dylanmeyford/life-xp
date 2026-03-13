@@ -261,30 +261,39 @@ export default function Goals() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {strategies.map((s, i) => (
-                    <button
-                      key={s.id}
-                      onClick={() => selectStrategy(i)}
-                      disabled={selectingStrategy}
-                      className="w-full text-left p-4 rounded-lg border border-white/5 hover:border-accent-primary/40 hover:bg-accent-primary/5 transition disabled:opacity-50"
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-semibold text-white">{s.label}</span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                          s.automation_level === 'automatic' ? 'bg-accent-success/15 text-accent-success' :
-                          s.automation_level === 'semi-automatic' ? 'bg-accent-primary/15 text-accent-primary' :
-                          s.automation_level === 'user-assisted' ? 'bg-accent-xp/15 text-accent-xp' :
-                          'bg-white/5 text-white/40'
-                        }`}>
-                          {s.automation_level}
-                        </span>
-                      </div>
-                      <p className="text-xs text-white/50 mb-2">{s.approach}</p>
-                      {s.setup_required && s.setup_required !== 'None' && (
-                        <p className="text-[10px] text-accent-xp/70">Setup: {s.setup_required}</p>
-                      )}
-                    </button>
-                  ))}
+                  {strategies.length === 0 ? (
+                    <div className="text-center py-6">
+                      <p className="text-sm text-white/50 mb-2">No tracking strategies available.</p>
+                      <p className="text-xs text-white/30">
+                        Set the <code className="bg-white/10 px-1.5 py-0.5 rounded text-white/50">ANTHROPIC_API_KEY</code> environment variable to enable AI-powered tracking suggestions.
+                      </p>
+                    </div>
+                  ) : (
+                    strategies.map((s, i) => (
+                      <button
+                        key={s.id}
+                        onClick={() => selectStrategy(i)}
+                        disabled={selectingStrategy}
+                        className="w-full text-left p-4 rounded-lg border border-white/5 hover:border-accent-primary/40 hover:bg-accent-primary/5 transition disabled:opacity-50"
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-semibold text-white">{s.label}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                            s.automation_level === 'automatic' ? 'bg-accent-success/15 text-accent-success' :
+                            s.automation_level === 'semi-automatic' ? 'bg-accent-primary/15 text-accent-primary' :
+                            s.automation_level === 'user-assisted' ? 'bg-accent-xp/15 text-accent-xp' :
+                            'bg-white/5 text-white/40'
+                          }`}>
+                            {s.automation_level}
+                          </span>
+                        </div>
+                        <p className="text-xs text-white/50 mb-2">{s.approach}</p>
+                        {s.setup_required && s.setup_required !== 'None' && (
+                          <p className="text-[10px] text-accent-xp/70">Setup: {s.setup_required}</p>
+                        )}
+                      </button>
+                    ))
+                  )}
                 </div>
               )}
 

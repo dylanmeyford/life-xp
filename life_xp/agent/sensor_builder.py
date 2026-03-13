@@ -255,7 +255,7 @@ Here are the existing sensor base class and an example sensor for reference:
 
 Requirements:
 1. Subclass Sensor from life_xp.sensors.base
-2. Set sensor_type = "custom_{goal_id}" where goal_id = {goal['id']}
+2. Set sensor_type = "custom_{{goal_id}}" where goal_id = {goal['id']}
 3. Implement is_available() — return True only if the required tools exist
 4. Implement check(config) — return a list of SensorEvent when the condition is met
 5. Use subprocess with timeout=10 for any shell commands
