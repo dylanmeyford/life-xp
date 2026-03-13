@@ -6,3 +6,4 @@ build/
 .eggs/
 *.db
 .life-xp/
+node_modules/
