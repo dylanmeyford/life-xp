@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "life-xp"
+version = "0.1.0"
+description = "Gamify your life with XP, quests, and reactive goal tracking"
+requires-python = ">=3.10"
+dependencies = [
+    "rich>=13.0",
+    "textual>=0.40",
+    "click>=8.0",
+    "pydantic>=2.0",
+    "apscheduler>=3.10",
+    "plyer>=2.1",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "anthropic>=0.40",
+]
+
+[project.scripts]
+life-xp = "life_xp.cli:cli"
+lxp = "life_xp.cli:cli"
+
+[tool.setuptools.packages.find]
+include = ["life_xp*"]
