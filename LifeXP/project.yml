@@ -31,7 +31,7 @@ targets:
     entitlements:
       path: LifeXP/LifeXP.entitlements
       properties:
-        com.apple.security.app-sandbox: true
+        com.apple.security.app-sandbox: false
         com.apple.security.network.client: true
         com.apple.security.application-groups:
           - group.com.lifexp.shared
@@ -56,7 +56,7 @@ targets:
     entitlements:
       path: LifeXPWidget/LifeXPWidget.entitlements
       properties:
-        com.apple.security.app-sandbox: true
+        com.apple.security.app-sandbox: false
         com.apple.security.network.client: true
         com.apple.security.application-groups:
           - group.com.lifexp.shared
