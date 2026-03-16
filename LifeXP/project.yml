@@ -1,0 +1,57 @@
+name: LifeXP
+options:
+  bundleIdPrefix: com.lifexp
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "15.0"
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+
+targets:
+  LifeXP:
+    type: application
+    platform: macOS
+    sources:
+      - LifeXP
+      - Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lifexp.app
+        INFOPLIST_FILE: LifeXP/Info.plist
+        CODE_SIGN_ENTITLEMENTS: LifeXP/LifeXP.entitlements
+        PRODUCT_NAME: Life XP
+    entitlements:
+      path: LifeXP/LifeXP.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        com.apple.security.application-groups:
+          - group.com.lifexp.shared
+
+  LifeXPWidgetExtension:
+    type: app-extension
+    platform: macOS
+    product: LifeXPWidgetExtension
+    sources:
+      - LifeXPWidget
+      - Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lifexp.app.widget
+        INFOPLIST_FILE: LifeXPWidget/Info.plist
+        CODE_SIGN_ENTITLEMENTS: LifeXPWidget/LifeXPWidget.entitlements
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks"
+    entitlements:
+      path: LifeXPWidget/LifeXPWidget.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        com.apple.security.application-groups:
+          - group.com.lifexp.shared
+    dependencies:
+      - target: LifeXP
+        embed: false
