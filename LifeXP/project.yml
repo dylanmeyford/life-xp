@@ -21,23 +21,22 @@ targets:
     type: application
     platform: macOS
     sources:
-      - LifeXP
+      - path: LifeXP
+        excludes:
+          - Info.plist
       - Shared
-    info:
-      path: LifeXP/Info.plist
-      properties:
-        CFBundleShortVersionString: "$(MARKETING_VERSION)"
-        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
-        CFBundleURLTypes:
-          - CFBundleURLName: com.lifexp.oauth
-            CFBundleURLSchemes:
-              - lifexp
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lifexp.app
         CODE_SIGN_ENTITLEMENTS: LifeXP/LifeXP.entitlements
         PRODUCT_NAME: Life XP
         CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleURLTypes: >-
+          <array><dict>
+          <key>CFBundleURLName</key><string>com.lifexp.oauth</string>
+          <key>CFBundleURLSchemes</key><array><string>lifexp</string></array>
+          </dict></array>
     entitlements:
       path: LifeXP/LifeXP.entitlements
       properties:
@@ -54,20 +53,16 @@ targets:
     platform: macOS
     product: LifeXPWidgetExtension
     sources:
-      - LifeXPWidget
+      - path: LifeXPWidget
+        excludes:
+          - Info.plist
       - Shared
-    info:
-      path: LifeXPWidget/Info.plist
-      properties:
-        CFBundleShortVersionString: "$(MARKETING_VERSION)"
-        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
-        EXAppExtensionAttributes:
-          EXExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lifexp.app.widget
         CODE_SIGN_ENTITLEMENTS: LifeXPWidget/LifeXPWidget.entitlements
         CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks"
     entitlements:
       path: LifeXPWidget/LifeXPWidget.entitlements
