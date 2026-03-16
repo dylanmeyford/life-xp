@@ -36,8 +36,11 @@ final class WithingsAPI: ObservableObject {
 
     var authorizationURL: URL? {
         guard !clientId.isEmpty else { return nil }
-        var components = URLComponents(string: Self.authBaseURL)!
+        // Use the login endpoint with b=authorize2 so existing users see
+        // the sign-in form instead of registration.
+        var components = URLComponents(string: "https://account.withings.com/oauth2_user/login")!
         components.queryItems = [
+            URLQueryItem(name: "b", value: "authorize2"),
             URLQueryItem(name: "response_type", value: "code"),
             URLQueryItem(name: "client_id", value: clientId),
             URLQueryItem(name: "redirect_uri", value: Self.callbackURL),
