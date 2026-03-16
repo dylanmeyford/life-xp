@@ -37,10 +37,10 @@ targets:
           - group.com.lifexp.shared
     dependencies:
       - target: LifeXPWidgetExtension
-        embed: embed-without-signing
+        embed: embed-and-sign
 
   LifeXPWidgetExtension:
-    type: app-extension
+    type: extensionkit-extension
     platform: macOS
     product: LifeXPWidgetExtension
     sources:
