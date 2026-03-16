@@ -35,6 +35,9 @@ targets:
         com.apple.security.network.client: true
         com.apple.security.application-groups:
           - group.com.lifexp.shared
+    dependencies:
+      - target: LifeXPWidgetExtension
+        embed: embed-without-signing
 
   LifeXPWidgetExtension:
     type: app-extension
@@ -57,6 +60,3 @@ targets:
         com.apple.security.network.client: true
         com.apple.security.application-groups:
           - group.com.lifexp.shared
-    dependencies:
-      - target: LifeXP
-        embed: false
