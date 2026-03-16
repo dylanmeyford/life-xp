@@ -23,10 +23,18 @@ targets:
     sources:
       - LifeXP
       - Shared
+    info:
+      path: LifeXP/Info.plist
+      properties:
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        CFBundleURLTypes:
+          - CFBundleURLName: com.lifexp.oauth
+            CFBundleURLSchemes:
+              - lifexp
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lifexp.app
-        INFOPLIST_FILE: LifeXP/Info.plist
         CODE_SIGN_ENTITLEMENTS: LifeXP/LifeXP.entitlements
         PRODUCT_NAME: Life XP
         CODE_SIGN_STYLE: Automatic
@@ -48,10 +56,16 @@ targets:
     sources:
       - LifeXPWidget
       - Shared
+    info:
+      path: LifeXPWidget/Info.plist
+      properties:
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        EXAppExtensionAttributes:
+          EXExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lifexp.app.widget
-        INFOPLIST_FILE: LifeXPWidget/Info.plist
         CODE_SIGN_ENTITLEMENTS: LifeXPWidget/LifeXPWidget.entitlements
         CODE_SIGN_STYLE: Automatic
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks"
