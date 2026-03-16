@@ -2,7 +2,7 @@ import SwiftUI
 import WidgetKit
 import Charts
 
-struct WeightEntry: TimelineEntry {
+struct WeightTimelineEntry: TimelineEntry {
     let date: Date
     let entries: [WeightDataPoint]
     let latest: Double?
@@ -16,7 +16,7 @@ struct WeightDataPoint: Identifiable {
 }
 
 struct WeightProvider: TimelineProvider {
-    func placeholder(in context: Context) -> WeightEntry {
+    func placeholder(in context: Context) -> WeightTimelineEntry {
         let now = Date()
         let samples = (0..<14).map { i in
             WeightDataPoint(
@@ -24,20 +24,20 @@ struct WeightProvider: TimelineProvider {
                 value: 175.0 + Double.random(in: -2...2)
             )
         }
-        return WeightEntry(date: now, entries: samples, latest: 174.5, useLbs: true)
+        return WeightTimelineEntry(date: now, entries: samples, latest: 174.5, useLbs: true)
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (WeightEntry) -> Void) {
+    func getSnapshot(in context: Context, completion: @escaping (WeightTimelineEntry) -> Void) {
         completion(currentEntry())
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<WeightEntry>) -> Void) {
+    func getTimeline(in context: Context, completion: @escaping (Timeline<WeightTimelineEntry>) -> Void) {
         let entry = currentEntry()
         let next = Calendar.current.date(byAdding: .hour, value: 1, to: .now)!
         completion(Timeline(entries: [entry], policy: .after(next)))
     }
 
-    private func currentEntry() -> WeightEntry {
+    private func currentEntry() -> WeightTimelineEntry {
         let store = DataStore.shared
         let useLbs = UserDefaults(suiteName: DataStore.appGroup)?.bool(forKey: "weightUnit") ?? true
         let raw = store.weightEntries.suffix(30)
@@ -51,12 +51,12 @@ struct WeightProvider: TimelineProvider {
 
         let latest = points.last?.value
 
-        return WeightEntry(date: .now, entries: points, latest: latest, useLbs: useLbs)
+        return WeightTimelineEntry(date: .now, entries: points, latest: latest, useLbs: useLbs)
     }
 }
 
 struct WeightWidgetView: View {
-    var entry: WeightEntry
+    var entry: WeightTimelineEntry
     @Environment(\.widgetFamily) var family
 
     private var unit: String { entry.useLbs ? "lbs" : "kg" }
