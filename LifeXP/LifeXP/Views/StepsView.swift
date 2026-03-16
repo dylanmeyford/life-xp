@@ -82,7 +82,7 @@ struct StepsView: View {
 
             Chart(Array(sorted)) { day in
                 BarMark(
-                    x: .value("Date", day.date.suffix(5)),
+                    x: .value("Date", String(day.date.suffix(5))),
                     y: .value("Steps", day.steps)
                 )
                 .foregroundStyle(day.isGoalMet ? .green : .blue)
