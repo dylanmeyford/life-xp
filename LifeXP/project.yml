@@ -10,6 +10,9 @@ settings:
   base:
     SWIFT_VERSION: "5.9"
     MACOSX_DEPLOYMENT_TARGET: "14.0"
+    CODE_SIGN_IDENTITY: "Apple Development"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: ""
 
 targets:
   LifeXP:
@@ -24,6 +27,7 @@ targets:
         INFOPLIST_FILE: LifeXP/Info.plist
         CODE_SIGN_ENTITLEMENTS: LifeXP/LifeXP.entitlements
         PRODUCT_NAME: Life XP
+        CODE_SIGN_STYLE: Automatic
     entitlements:
       path: LifeXP/LifeXP.entitlements
       properties:
@@ -44,6 +48,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.lifexp.app.widget
         INFOPLIST_FILE: LifeXPWidget/Info.plist
         CODE_SIGN_ENTITLEMENTS: LifeXPWidget/LifeXPWidget.entitlements
+        CODE_SIGN_STYLE: Automatic
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks"
     entitlements:
       path: LifeXPWidget/LifeXPWidget.entitlements
