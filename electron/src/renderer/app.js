@@ -39,13 +39,19 @@ document.querySelectorAll(".nav-btn").forEach((btn) => {
 
 async function refreshStats() {
   try {
-    const stats = await api("/api/stats");
+    const [stats, streaks] = await Promise.all([
+      api("/api/stats"),
+      api("/api/streaks").catch(() => []),
+    ]);
     document.getElementById("player-level").textContent = `Lv ${stats.level}`;
     document.getElementById("player-title").textContent = stats.title;
     document.getElementById("xp-bar-fill").style.width = `${stats.progress * 100}%`;
     document.getElementById("xp-bar-text").textContent =
       `${stats.xp_current_level} / ${stats.xp_next_level} XP`;
-    document.getElementById("total-xp").textContent = `${stats.total_xp} XP`;
+
+    const bestStreak = streaks.reduce((max, s) => s.current > max ? s.current : max, 0);
+    const streakStr = bestStreak > 0 ? ` \uD83D\uDD25${bestStreak}` : "";
+    document.getElementById("total-xp").textContent = `${stats.total_xp} XP${streakStr}`;
   } catch (e) {
     console.error("Failed to fetch stats:", e);
   }
@@ -216,12 +222,15 @@ async function refreshGoals() {
   try {
     const goals = await api("/api/goals?status=active");
 
-    // Fetch daily readings for all goals in parallel
-    const readingsArr = await Promise.all(
-      goals.map((g) => api(`/api/goals/${g.id}/readings/daily?days=365`).catch(() => []))
-    );
+    // Fetch daily readings and streaks for all goals in parallel
+    const [readingsArr, streaks] = await Promise.all([
+      Promise.all(goals.map((g) => api(`/api/goals/${g.id}/readings/daily?days=365`).catch(() => []))),
+      api("/api/streaks").catch(() => []),
+    ]);
     const readingsMap = {};
     goals.forEach((g, i) => { readingsMap[g.id] = readingsArr[i]; });
+    const streakMap = {};
+    streaks.forEach((s) => { streakMap[s.goal_id] = s; });
 
     let html = `
       <div class="new-goal-area">
@@ -301,10 +310,23 @@ async function refreshGoals() {
           ? `<span class="goal-sync-time">${formatLastSynced(lastSyncedAt)}</span>`
           : "";
 
+        // Streak info
+        const streak = streakMap[goal.id];
+        const streakHtml = streak && streak.current > 0
+          ? `<div class="streak-badge" title="${streak.multiplier}x XP multiplier">
+               <span class="streak-fire">\uD83D\uDD25</span>
+               <span class="streak-count">${streak.current}</span>
+               ${streak.multiplier > 1 ? `<span class="streak-mult">${streak.multiplier}x</span>` : ''}
+             </div>`
+          : '';
+
         html += `
           <div class="card" data-goal-id="${goal.id}">
             <div class="card-header">
-              <div class="card-title">${goal.title}</div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="card-title">${goal.title}</div>
+                ${streakHtml}
+              </div>
               <div style="display:flex;align-items:center;gap:10px">
                 ${progressLabel}
                 <span class="badge badge-active">${goal.status}</span>
@@ -318,6 +340,7 @@ async function refreshGoals() {
                 ${syncHtml}
               </div>
               <div style="display:flex;gap:8px">
+                <button class="btn btn-secondary" onclick="streakCheckin(${goal.id}, this)" title="Check in for today's streak">\uD83D\uDD25 Check in</button>
                 ${autoTracked ? `<button class="btn btn-secondary" onclick="syncGoal(${goal.id}, this)">Sync</button>` : ""}
                 <button class="btn btn-secondary" onclick="openGoalChat(${goal.id})">Coach</button>
               </div>
@@ -603,9 +626,33 @@ async function answerQuestion(answer) {
   }
 }
 // Make it globally accessible
+async function streakCheckin(goalId, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = "..."; }
+  try {
+    const result = await api(`/api/streaks/${goalId}/checkin`, { method: "POST" });
+    if (result.already) {
+      showToast("Already checked in today!", "info");
+    } else {
+      showToast(`Streak: ${result.current} day${result.current !== 1 ? 's' : ''}! ${result.multiplier > 1 ? `(${result.multiplier}x XP)` : ''}`, "success");
+    }
+    if (result.achievements_unlocked && result.achievements_unlocked.length) {
+      for (const ach of result.achievements_unlocked) {
+        showToast(`Achievement unlocked: ${ach.icon} ${ach.title}!`, "success");
+      }
+    }
+    await refreshGoals();
+    await refreshStats();
+  } catch (err) {
+    showToast(`Check-in failed: ${err.message}`, "error");
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "\uD83D\uDD25 Check in"; }
+  }
+}
+
 window.answerQuestion = answerQuestion;
 window.openGoalChat = openGoalChat;
 window.syncGoal = syncGoal;
+window.streakCheckin = streakCheckin;
 
 function formatMessage(text) {
   if (!text) return "";
@@ -744,12 +791,152 @@ async function refreshSettings() {
   });
 }
 
+// ── Daily Quests page ───────────────────────────────────────────────
+
+async function refreshQuests() {
+  const page = document.getElementById("page-quests");
+  try {
+    const quests = await api("/api/quests/daily");
+    const completedCount = quests.filter((q) => q.status === "completed").length;
+    const totalCount = quests.length;
+
+    let html = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h2 style="font-size:16px;font-weight:600;letter-spacing:-0.01em">Daily Quests</h2>
+        <span style="font-size:13px;color:var(--text-3)">${completedCount} / ${totalCount} complete</span>
+      </div>
+    `;
+
+    if (totalCount > 0) {
+      // Progress bar for today's quests
+      const pct = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+      html += `
+        <div class="quest-progress-bar" style="margin-bottom:20px">
+          <div style="height:4px;background:var(--elevated);border-radius:2px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:${pct >= 100 ? 'var(--green)' : 'var(--accent)'};border-radius:2px;transition:width 0.5s ease"></div>
+          </div>
+          ${pct >= 100 ? '<div style="text-align:center;color:var(--green);font-size:12px;margin-top:8px;font-weight:600">All quests complete! +50 bonus XP</div>' : ''}
+        </div>
+      `;
+    }
+
+    if (quests.length === 0) {
+      html += `<div class="empty-state"><h2>No quests today</h2><p>Create some goals first, then daily quests will appear!</p></div>`;
+    } else {
+      for (const quest of quests) {
+        const done = quest.status === "completed";
+        html += `
+          <div class="card quest-card ${done ? 'quest-done' : ''}" style="display:flex;align-items:center;gap:14px;padding:16px 20px">
+            <div class="quest-check ${done ? 'checked' : ''}" ${!done ? `onclick="completeQuest(${quest.id}, this)"` : ''}>
+              ${done ? '&#10003;' : ''}
+            </div>
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:500;${done ? 'text-decoration:line-through;color:var(--text-3)' : ''}">${quest.title}</div>
+              ${quest.description ? `<div style="font-size:12px;color:var(--text-3);margin-top:2px">${quest.description}</div>` : ''}
+            </div>
+            <span class="badge ${done ? 'badge-completed' : 'badge-active'}" style="flex-shrink:0">${quest.xp_reward} XP</span>
+          </div>
+        `;
+      }
+    }
+
+    page.innerHTML = html;
+  } catch (e) {
+    page.innerHTML = `<div class="empty-state"><p>Cannot load quests. Make sure the server is running.</p></div>`;
+  }
+}
+
+async function completeQuest(questId, el) {
+  if (el) {
+    el.classList.add("checked");
+    el.innerHTML = "&#10003;";
+    el.onclick = null;
+  }
+  try {
+    const result = await api(`/api/quests/${questId}/complete`, { method: "POST" });
+    showXPPopup(result.xp_awarded);
+    if (result.all_complete) {
+      showToast("All daily quests complete! +50 bonus XP", "success");
+    }
+    if (result.achievements_unlocked && result.achievements_unlocked.length) {
+      for (const ach of result.achievements_unlocked) {
+        showToast(`Achievement unlocked: ${ach.icon} ${ach.title}!`, "success");
+      }
+    }
+    await refreshStats();
+    // Slight delay for visual feedback before refresh
+    setTimeout(() => refreshQuests(), 300);
+  } catch (err) {
+    showToast(`Failed to complete quest: ${err.message}`, "error");
+  }
+}
+window.completeQuest = completeQuest;
+
+// ── Achievements page ──────────────────────────────────────────────
+
+async function refreshAchievements() {
+  const page = document.getElementById("page-achievements");
+  try {
+    const achievements = await api("/api/achievements");
+    const unlocked = achievements.filter((a) => a.unlocked_at);
+    const locked = achievements.filter((a) => !a.unlocked_at);
+
+    let html = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h2 style="font-size:16px;font-weight:600;letter-spacing:-0.01em">Achievements</h2>
+        <span style="font-size:13px;color:var(--text-3)">${unlocked.length} / ${achievements.length} unlocked</span>
+      </div>
+    `;
+
+    if (unlocked.length > 0) {
+      html += `<div class="achievements-grid">`;
+      for (const ach of unlocked) {
+        html += `
+          <div class="achievement-card unlocked" title="${ach.description}">
+            <div class="achievement-icon">${ach.icon}</div>
+            <div class="achievement-title">${ach.title}</div>
+            <div class="achievement-desc">${ach.description}</div>
+            <div class="achievement-xp">+${ach.xp_reward} XP</div>
+          </div>
+        `;
+      }
+      html += `</div>`;
+    }
+
+    if (locked.length > 0) {
+      html += `<h3 style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin:24px 0 12px">Locked</h3>`;
+      html += `<div class="achievements-grid">`;
+      for (const ach of locked) {
+        html += `
+          <div class="achievement-card locked" title="${ach.description}">
+            <div class="achievement-icon locked-icon">${ach.icon}</div>
+            <div class="achievement-title">${ach.title}</div>
+            <div class="achievement-desc">${ach.description}</div>
+            <div class="achievement-xp">+${ach.xp_reward} XP</div>
+          </div>
+        `;
+      }
+      html += `</div>`;
+    }
+
+    if (achievements.length === 0) {
+      html += `<div class="empty-state"><h2>No achievements yet</h2><p>Start setting goals and tracking progress to unlock badges!</p></div>`;
+    }
+
+    page.innerHTML = html;
+  } catch (e) {
+    page.innerHTML = `<div class="empty-state"><p>Cannot load achievements.</p></div>`;
+  }
+}
+
 // ── Page refresh router ─────────────────────────────────────────────
 
 function refreshPage(page) {
   switch (page) {
     case "goals": return refreshGoals();
     case "chat": return refreshChat();
+    case "quests": return refreshQuests();
+    case "achievements": return refreshAchievements();
     case "xp": return refreshXP();
     case "settings": return refreshSettings();
   }

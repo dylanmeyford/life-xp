@@ -79,10 +79,38 @@ async def get_player_stats(db) -> PlayerStats:
     )
 
 
-async def award_xp(db, amount: int, source_type: str, source_id: int | None = None, reason: str = "") -> PlayerStats:
-    """Award XP and return updated stats."""
+async def award_xp(db, amount: int, source_type: str, source_id: int | None = None, reason: str = "", apply_multiplier: bool = True) -> PlayerStats:
+    """Award XP and return updated stats.
+    If apply_multiplier is True and source_id is a goal, applies streak multiplier."""
+    final_amount = amount
+
+    if apply_multiplier and source_type in ("goal", "sub_goal", "quest") and source_id:
+        try:
+            from life_xp.streaks import get_streak
+            # For sub_goals, look up the goal_id
+            goal_id = source_id
+            if source_type == "sub_goal":
+                row = await fetch_one(db, "SELECT goal_id FROM sub_goals WHERE id = ?", (source_id,))
+                if row:
+                    goal_id = row["goal_id"]
+            elif source_type == "quest":
+                row = await fetch_one(db, "SELECT goal_id FROM daily_quests WHERE id = ?", (source_id,))
+                if row and row["goal_id"]:
+                    goal_id = row["goal_id"]
+                else:
+                    goal_id = None
+
+            if goal_id:
+                streak = await get_streak(db, goal_id)
+                mult = streak.get("multiplier", 1.0)
+                if mult > 1.0:
+                    final_amount = int(amount * mult)
+                    reason = f"{reason} ({mult}x streak bonus)" if reason else f"{mult}x streak bonus"
+        except Exception:
+            pass
+
     await insert(db, "xp_ledger", {
-        "amount": amount,
+        "amount": final_amount,
         "source_type": source_type,
         "source_id": source_id,
         "reason": reason,
