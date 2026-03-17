@@ -137,6 +137,47 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "delete_sensor",
+        "description": (
+            "Delete a sensor from a goal. This removes the sensor configuration "
+            "and all its historical readings. Use this when a sensor is broken, "
+            "no longer needed, or the user wants to stop tracking via that method."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "sensor_id": {"type": "integer", "description": "ID of the sensor to delete"},
+            },
+            "required": ["sensor_id"],
+        },
+    },
+    {
+        "name": "replace_sensor",
+        "description": (
+            "Replace the existing sensor on a goal with a new one. Each goal can "
+            "only have one sensor. This deletes the old sensor (and its readings) "
+            "and creates a new one in 'testing' status. Use this when switching "
+            "tracking strategies for a goal."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "goal_id": {"type": "integer"},
+                "sensor_type": {
+                    "type": "string",
+                    "enum": ["swift_health", "api", "cli", "browser", "file_watch", "manual"],
+                },
+                "config": {
+                    "type": "object",
+                    "description": (
+                        "Configuration for the new sensor. Same structure as build_sensor config."
+                    ),
+                },
+            },
+            "required": ["goal_id", "sensor_type", "config"],
+        },
+    },
+    {
         "name": "award_xp",
         "description": (
             "Award XP points to the user for achieving something. "
@@ -235,6 +276,18 @@ async def _discover_integrations(db, inp: dict) -> dict:
 
 
 async def _build_sensor(db, inp: dict) -> dict:
+    # Enforce 1 sensor per goal
+    existing = await fetch_one(
+        db, "SELECT id, sensor_type FROM sensor_configs WHERE goal_id = ?", (inp["goal_id"],)
+    )
+    if existing:
+        return {
+            "error": (
+                f"Goal {inp['goal_id']} already has a sensor "
+                f"(id={existing['id']}, type={existing['sensor_type']}). "
+                "Use replace_sensor to swap it, or delete_sensor to remove it first."
+            )
+        }
     sensor_id = await insert(db, "sensor_configs", {
         "goal_id": inp["goal_id"],
         "sensor_type": inp["sensor_type"],
@@ -275,6 +328,53 @@ async def _test_sensor(db, inp: dict) -> dict:
     except Exception as e:
         await update(db, "sensor_configs", inp["sensor_id"], {"status": "failed"})
         return {"status": "failed", "error": str(e)}
+
+
+async def _delete_sensor(db, inp: dict) -> dict:
+    sensor = await fetch_one(db, "SELECT * FROM sensor_configs WHERE id = ?", (inp["sensor_id"],))
+    if not sensor:
+        return {"error": "Sensor not found"}
+    # Delete readings first, then the sensor config
+    await db.execute("DELETE FROM sensor_readings WHERE sensor_id = ?", (inp["sensor_id"],))
+    await db.execute("DELETE FROM sensor_configs WHERE id = ?", (inp["sensor_id"],))
+    await db.commit()
+    return {
+        "deleted_sensor_id": sensor["id"],
+        "goal_id": sensor["goal_id"],
+        "sensor_type": sensor["sensor_type"],
+        "message": f"Sensor {sensor['id']} ({sensor['sensor_type']}) deleted.",
+    }
+
+
+async def _replace_sensor(db, inp: dict) -> dict:
+    # Find and delete existing sensor(s) for this goal
+    existing = await fetch_all(
+        db, "SELECT * FROM sensor_configs WHERE goal_id = ?", (inp["goal_id"],)
+    )
+    deleted = []
+    for sensor in existing:
+        await db.execute("DELETE FROM sensor_readings WHERE sensor_id = ?", (sensor["id"],))
+        await db.execute("DELETE FROM sensor_configs WHERE id = ?", (sensor["id"],))
+        deleted.append({"id": sensor["id"], "type": sensor["sensor_type"]})
+    if deleted:
+        await db.commit()
+
+    # Create the new sensor
+    sensor_id = await insert(db, "sensor_configs", {
+        "goal_id": inp["goal_id"],
+        "sensor_type": inp["sensor_type"],
+        "config": json.dumps(inp["config"]),
+        "status": "testing",
+    })
+    return {
+        "sensor_id": sensor_id,
+        "status": "testing",
+        "deleted": deleted,
+        "message": (
+            f"Replaced {len(deleted)} old sensor(s) with new {inp['sensor_type']} sensor. "
+            "Run test_sensor to verify."
+        ),
+    }
 
 
 async def _test_swift_health(config: dict) -> dict:
@@ -402,6 +502,8 @@ TOOL_HANDLERS = {
     "discover_integrations": _discover_integrations,
     "build_sensor": _build_sensor,
     "test_sensor": _test_sensor,
+    "delete_sensor": _delete_sensor,
+    "replace_sensor": _replace_sensor,
     "award_xp": _award_xp,
     "ask_user": _ask_user,
     "format_progress": _format_progress,
