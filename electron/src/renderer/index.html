@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Life XP</title>
+  <link rel="stylesheet" href="styles/app.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Draggable title bar region -->
+    <header id="titlebar">
+      <div class="titlebar-drag"></div>
+      <div id="player-bar">
+        <div id="player-level" class="badge">Lv 1</div>
+        <div id="player-title">Novice</div>
+        <div id="xp-bar-container">
+          <div id="xp-bar-fill"></div>
+          <span id="xp-bar-text">0 / 100 XP</span>
+        </div>
+        <div id="total-xp">0 XP</div>
+      </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav id="sidebar">
+      <button class="nav-btn active" data-page="goals">
+        <span class="nav-icon">⚔</span> Goals
+      </button>
+      <button class="nav-btn" data-page="chat">
+        <span class="nav-icon">💬</span> Coach
+      </button>
+      <button class="nav-btn" data-page="xp">
+        <span class="nav-icon">✦</span> XP Log
+      </button>
+      <button class="nav-btn" data-page="settings">
+        <span class="nav-icon">⚙</span> Settings
+      </button>
+    </nav>
+
+    <!-- Pages -->
+    <main id="content">
+      <section id="page-goals" class="page active"></section>
+      <section id="page-chat" class="page"></section>
+      <section id="page-xp" class="page"></section>
+      <section id="page-settings" class="page"></section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

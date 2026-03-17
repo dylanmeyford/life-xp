@@ -1,0 +1,23 @@
+[project]
+name = "life-xp"
+version = "0.1.0"
+description = "Gamify your life — set goals, track progress, earn XP"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.39.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.10.0",
+    "aiosqlite>=0.20.0",
+    "apscheduler>=3.10.0",
+    "click>=8.1.0",
+    "rich>=13.9.0",
+    "httpx>=0.28.0",
+]
+
+[project.scripts]
+life-xp = "life_xp.cli:cli"
+
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.backends._legacy:_Backend"

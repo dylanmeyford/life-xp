@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.venv/
+node_modules/
+*.db
+.DS_Store
+.env
+*.pem
+life_xp/swift_helpers/health_reader
