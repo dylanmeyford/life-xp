@@ -58,6 +58,8 @@ targets:
         INFOPLIST_FILE: LifeXPWidget/Info.plist
         CODE_SIGN_ENTITLEMENTS: LifeXPWidget/LifeXPWidget.entitlements
         CODE_SIGN_STYLE: Automatic
+        MARKETING_VERSION: "$(MARKETING_VERSION)"
+        CURRENT_PROJECT_VERSION: "$(CURRENT_PROJECT_VERSION)"
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks"
     entitlements:
       path: LifeXPWidget/LifeXPWidget.entitlements
