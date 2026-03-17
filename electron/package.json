@@ -1,0 +1,14 @@
+{
+  "name": "life-xp",
+  "version": "0.1.0",
+  "description": "Life XP — Gamify your life",
+  "main": "src/main/index.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "dependencies": {
+    "electron": "^33.0.0"
+  },
+  "devDependencies": {}
+}
