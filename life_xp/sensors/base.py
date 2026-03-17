@@ -42,11 +42,12 @@ class Sensor(ABC):
             })
             return result
         except Exception as e:
+            error_msg = f"error: {e}"
             await update(db, "sensor_configs", self.sensor_id, {
                 "last_run": datetime.now().isoformat(),
-                "last_value": f"error: {e}",
+                "last_value": error_msg,
             })
-            return None
+            return {"error": error_msg}
 
 
 class SensorRegistry:
@@ -82,7 +83,12 @@ class SensorRegistry:
             if sensor:
                 result = await sensor.poll(db)
                 if result:
-                    results.append({"sensor_id": s["id"], "goal_id": s["goal_id"], **result})
+                    results.append({
+                        "sensor_id": s["id"],
+                        "goal_id": s["goal_id"],
+                        "sensor_type": s["sensor_type"],
+                        **result,
+                    })
         return results
 
     @classmethod
@@ -100,5 +106,10 @@ class SensorRegistry:
             if sensor:
                 result = await sensor.poll(db)
                 if result:
-                    results.append({"sensor_id": s["id"], "goal_id": s["goal_id"], **result})
+                    results.append({
+                        "sensor_id": s["id"],
+                        "goal_id": s["goal_id"],
+                        "sensor_type": s["sensor_type"],
+                        **result,
+                    })
         return results

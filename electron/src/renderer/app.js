@@ -285,11 +285,16 @@ async function refreshGoals() {
               <span id="toggle-label-${goal.id}">${restSG.length} more milestone${restSG.length !== 1 ? "s" : ""}</span>
             </button>` : ""}` : "";
 
-        // Sensor pill
+        // Sensor pills — show all sensors with status indicators
         const sensorLabel = { swift_health: "Apple Health", api: "API", cli: "CLI", manual: "Manual" };
+        const sensorIcon = { active: "📡", failed: "⚠️", testing: "⏳", pending: "◯" };
         const sensorHtml = (goal.sensors || [])
-          .filter((s) => s.status === "active")
-          .map((s) => `<span class="sensor-pill">📡 ${sensorLabel[s.sensor_type] || s.sensor_type}</span>`)
+          .map((s) => {
+            const icon = sensorIcon[s.status] || "📡";
+            const statusCls = s.status !== "active" ? ` sensor-${s.status}` : "";
+            const errTitle = s.last_value && s.last_value.startsWith("error:") ? ` title="${s.last_value}"` : "";
+            return `<span class="sensor-pill${statusCls}"${errTitle}>${icon} ${sensorLabel[s.sensor_type] || s.sensor_type}</span>`;
+          })
           .join("");
         const { autoTracked, lastSyncedAt } = deriveGoalSyncMeta(goal);
         const syncHtml = autoTracked
@@ -411,11 +416,14 @@ async function syncGoal(goalId, btn) {
     }
 
     const n = Number(result?.polled || 0);
+    const details = result?.results || [];
+    const hasErrors = details.some((d) => d.error);
     showToast(
       n > 0
-        ? `Synced ${n} sensor${n !== 1 ? "s" : ""}${usedFallback ? " (all goals)" : ""}.`
+        ? `Synced ${n} sensor${n !== 1 ? "s" : ""}${usedFallback ? " (all goals)" : ""}${hasErrors ? " (with errors)" : ""}.`
         : "No active sensors to sync.",
-      "success"
+      hasErrors ? "error" : "success",
+      details.length ? details : null
     );
     await refreshGoals();
     await refreshStats();
@@ -786,17 +794,57 @@ if (window.lifeXP?.onOAuthResult) {
   });
 }
 
-function showToast(message, type = "info") {
+function showToast(message, type = "info", details = null) {
   const el = document.createElement("div");
   el.className = `toast toast-${type}`;
-  el.textContent = message;
-  document.body.appendChild(el);
-  // Trigger animation
-  requestAnimationFrame(() => el.classList.add("toast-visible"));
-  setTimeout(() => {
+
+  const msgSpan = document.createElement("span");
+  msgSpan.textContent = message;
+  el.appendChild(msgSpan);
+
+  let dismissTimer;
+  const dismiss = () => {
     el.classList.remove("toast-visible");
     setTimeout(() => el.remove(), 300);
-  }, 3500);
+  };
+
+  if (details && details.length) {
+    el.classList.add("has-details");
+
+    const toggle = document.createElement("button");
+    toggle.className = "toast-details-toggle";
+    toggle.innerHTML = "&#9654; Details";
+    el.appendChild(toggle);
+
+    const list = document.createElement("div");
+    list.className = "toast-details-list";
+    list.style.display = "none";
+
+    const sLabel = { swift_health: "Apple Health", api: "API", cli: "CLI", manual: "Manual" };
+    for (const d of details) {
+      const item = document.createElement("div");
+      const isErr = !!d.error;
+      item.className = `toast-detail-item ${isErr ? "detail-error" : "detail-ok"}`;
+      const label = sLabel[d.sensor_type] || d.sensor_type || "Sensor";
+      const val = isErr ? d.error : (d.value ?? "\u2014");
+      item.textContent = `${isErr ? "\u2717" : "\u2713"} ${label} \u2014 ${val}`;
+      list.appendChild(item);
+    }
+    el.appendChild(list);
+
+    toggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = list.style.display !== "none";
+      list.style.display = open ? "none" : "block";
+      toggle.innerHTML = open ? "&#9654; Details" : "&#9660; Details";
+      clearTimeout(dismissTimer);
+      dismissTimer = setTimeout(dismiss, open ? 4000 : 10000);
+    });
+  }
+
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add("toast-visible"));
+  dismissTimer = setTimeout(dismiss, details && details.length ? 5000 : 3500);
 }
 
 // ── Init ────────────────────────────────────────────────────────────
