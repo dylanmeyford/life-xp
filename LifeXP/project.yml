@@ -26,6 +26,7 @@ targets:
           - Info.plist
       - Shared
     info:
+      path: LifeXP/Info.plist
       properties:
         CFBundleShortVersionString: "1.0.0"
         CFBundleVersion: "1"
@@ -60,6 +61,7 @@ targets:
           - Info.plist
       - Shared
     info:
+      path: LifeXPWidget/Info.plist
       properties:
         CFBundleShortVersionString: "1.0.0"
         CFBundleVersion: "1"
