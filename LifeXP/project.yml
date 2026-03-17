@@ -45,7 +45,7 @@ targets:
         codeSign: true
 
   LifeXPWidgetExtension:
-    type: extensionkit-extension
+    type: app-extension
     platform: macOS
     product: LifeXPWidgetExtension
     sources:
