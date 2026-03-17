@@ -82,6 +82,15 @@ CREATE TABLE IF NOT EXISTS user_settings (
 """
 
 
+MIGRATIONS = [
+    "ALTER TABLE goals ADD COLUMN target TEXT",
+    "ALTER TABLE goals ADD COLUMN category TEXT",
+    "ALTER TABLE goals ADD COLUMN completed_at TEXT",
+    "ALTER TABLE sub_goals ADD COLUMN target TEXT",
+    "ALTER TABLE sub_goals ADD COLUMN completed_at TEXT",
+]
+
+
 async def get_db() -> aiosqlite.Connection:
     """Get a database connection, creating the schema if needed."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -90,6 +99,12 @@ async def get_db() -> aiosqlite.Connection:
     await db.executescript(SCHEMA)
     await db.execute("PRAGMA journal_mode=WAL")
     await db.execute("PRAGMA foreign_keys=ON")
+    for migration in MIGRATIONS:
+        try:
+            await db.execute(migration)
+            await db.commit()
+        except Exception:
+            pass
     return db
 
 
