@@ -15,10 +15,11 @@ class Sensor(ABC):
 
     sensor_type: str = "base"
 
-    def __init__(self, sensor_id: int, goal_id: int, config: dict):
+    def __init__(self, sensor_id: int, goal_id: int, config: dict, db=None):
         self.sensor_id = sensor_id
         self.goal_id = goal_id
         self.config = config
+        self._db = db
 
     @abstractmethod
     async def read(self) -> dict[str, Any]:
@@ -62,11 +63,11 @@ class SensorRegistry:
         return wrapper
 
     @classmethod
-    def create(cls, sensor_type: str, sensor_id: int, goal_id: int, config: dict) -> Sensor | None:
+    def create(cls, sensor_type: str, sensor_id: int, goal_id: int, config: dict, db=None) -> Sensor | None:
         sensor_cls = cls._types.get(sensor_type)
         if not sensor_cls:
             return None
-        return sensor_cls(sensor_id, goal_id, config)
+        return sensor_cls(sensor_id, goal_id, config, db=db)
 
     @classmethod
     async def poll_all(cls, db) -> list[dict]:
@@ -77,7 +78,7 @@ class SensorRegistry:
         results = []
         for s in sensors:
             config = json.loads(s["config"])
-            sensor = cls.create(s["sensor_type"], s["id"], s["goal_id"], config)
+            sensor = cls.create(s["sensor_type"], s["id"], s["goal_id"], config, db=db)
             if sensor:
                 result = await sensor.poll(db)
                 if result:
@@ -95,7 +96,7 @@ class SensorRegistry:
         results = []
         for s in sensors:
             config = json.loads(s["config"])
-            sensor = cls.create(s["sensor_type"], s["id"], s["goal_id"], config)
+            sensor = cls.create(s["sensor_type"], s["id"], s["goal_id"], config, db=db)
             if sensor:
                 result = await sensor.poll(db)
                 if result:
