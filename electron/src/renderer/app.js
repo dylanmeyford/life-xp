@@ -601,13 +601,47 @@ window.syncGoal = syncGoal;
 
 function formatMessage(text) {
   if (!text) return "";
-  // Basic markdown-like formatting
-  return text
+
+  // Extract fenced code blocks before escaping HTML
+  const codeBlocks = [];
+  text = text.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    const idx = codeBlocks.length;
+    codeBlocks.push(
+      `<div class="code-block">${lang ? `<span class="code-lang">${lang}</span>` : ""}<pre><code>${code
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .trimEnd()}</code></pre></div>`
+    );
+    return `\x00CB${idx}\x00`;
+  });
+
+  // Extract inline code before escaping
+  const inlineCode = [];
+  text = text.replace(/`([^`]+)`/g, (_, code) => {
+    const idx = inlineCode.length;
+    inlineCode.push(
+      `<code class="inline-code">${code
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")}</code>`
+    );
+    return `\x00IC${idx}\x00`;
+  });
+
+  // Now escape HTML in the remaining text
+  text = text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
     .replace(/\n/g, "<br>");
+
+  // Restore code blocks and inline code
+  text = text.replace(/\x00CB(\d+)\x00/g, (_, idx) => codeBlocks[idx]);
+  text = text.replace(/\x00IC(\d+)\x00/g, (_, idx) => inlineCode[idx]);
+
+  return text;
 }
 
 // ── XP page ─────────────────────────────────────────────────────────
