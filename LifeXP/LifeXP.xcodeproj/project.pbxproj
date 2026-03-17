@@ -1,0 +1,500 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		16B3691F0A3C0CEA6E5BAAA3 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = B928867C4600263F2E2F1C82 /* Models.swift */; };
+		27DA0BAC9569122D0D4B217B /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = B928867C4600263F2E2F1C82 /* Models.swift */; };
+		2B4307CBA3C9AA1C3B37A8C7 /* LifeXPWidgetExtension.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = C052DF8BE5CEF1605E924356 /* LifeXPWidgetExtension.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		2B92B6EC3404200BC1EFF799 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9363F9D92BABB5BC2E2BAD4D /* ContentView.swift */; };
+		67BD607F2F47BF6842FA9D1A /* WithingsAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9D13EF4C11969EDFCA64FB9 /* WithingsAPI.swift */; };
+		80C8891353C7CA407BB29C30 /* WeightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43E64F34A614116D1EEC3801 /* WeightView.swift */; };
+		8329C71E6973ABE1DCD6D4C3 /* StepsWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 005D3589F8343FC07238F350 /* StepsWidget.swift */; };
+		96B7358319A3B772F2089B90 /* LifeXPApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66B376A8B3AD733709709028 /* LifeXPApp.swift */; };
+		A74A919D58271C0C827F26FC /* WithingsAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9D13EF4C11969EDFCA64FB9 /* WithingsAPI.swift */; };
+		B45F2607F5A1841CA1143585 /* LifeXPWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7224979E0D20F58A8746E56B /* LifeXPWidgetBundle.swift */; };
+		CC2B45CE2909B464F38B9E3C /* WeightWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8C6A87F5386973B9D222C88 /* WeightWidget.swift */; };
+		CF5166A0A8B50B4DA49213BD /* StepsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A4ECF53283722BF446F60A /* StepsView.swift */; };
+		CFA77149FB233F0271D2DBAF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 44CF83CCD89E8C8FC8294537 /* Assets.xcassets */; };
+		DCC9B00ED5518F2BE3A5443F /* DataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47ED64B3B7849406FB401FF4 /* DataStore.swift */; };
+		E796EF685EADE629980A922E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 27FF85C6823A9CE6A7AB44C6 /* Assets.xcassets */; };
+		E92DECC3194DD4EF1C53B65B /* DataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47ED64B3B7849406FB401FF4 /* DataStore.swift */; };
+		F5C5D2CA42BCC6E598155C86 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F587CE499FB7ED6ABC2E09A4 /* SettingsView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D08F38F9313E3C276847E813 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C8805837586838152E05189F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C3ABD4FBB474307C585EE5D1;
+			remoteInfo = LifeXPWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		AF9071E1FB74800B464FAE1F /* Embed ExtensionKit Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(EXTENSIONS_FOLDER_PATH)";
+			dstSubfolderSpec = 16;
+			files = (
+				2B4307CBA3C9AA1C3B37A8C7 /* LifeXPWidgetExtension.appex in Embed ExtensionKit Extensions */,
+			);
+			name = "Embed ExtensionKit Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		005D3589F8343FC07238F350 /* StepsWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepsWidget.swift; sourceTree = "<group>"; };
+		27FF85C6823A9CE6A7AB44C6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		43E64F34A614116D1EEC3801 /* WeightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightView.swift; sourceTree = "<group>"; };
+		44CF83CCD89E8C8FC8294537 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		47ED64B3B7849406FB401FF4 /* DataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataStore.swift; sourceTree = "<group>"; };
+		4FBBC5814BEED56D54BBBE98 /* LifeXPWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LifeXPWidget.entitlements; sourceTree = "<group>"; };
+		66B376A8B3AD733709709028 /* LifeXPApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeXPApp.swift; sourceTree = "<group>"; };
+		7224979E0D20F58A8746E56B /* LifeXPWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeXPWidgetBundle.swift; sourceTree = "<group>"; };
+		75A4ECF53283722BF446F60A /* StepsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepsView.swift; sourceTree = "<group>"; };
+		9363F9D92BABB5BC2E2BAD4D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A8C6A87F5386973B9D222C88 /* WeightWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightWidget.swift; sourceTree = "<group>"; };
+		B928867C4600263F2E2F1C82 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		B9D13EF4C11969EDFCA64FB9 /* WithingsAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WithingsAPI.swift; sourceTree = "<group>"; };
+		C052DF8BE5CEF1605E924356 /* LifeXPWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.extensionkit-extension"; includeInIndex = 0; path = LifeXPWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E0E27052E9B5393E8BD0EC6D /* LifeXP.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LifeXP.entitlements; sourceTree = "<group>"; };
+		EBCA9BEA76B0DD0F6C8C2E8B /* LifeXP.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LifeXP.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F587CE499FB7ED6ABC2E09A4 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		2A91C0D63B77E5626DED1145 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				EBCA9BEA76B0DD0F6C8C2E8B /* LifeXP.app */,
+				C052DF8BE5CEF1605E924356 /* LifeXPWidgetExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4D140E285B605646920A70EB /* LifeXPWidget */ = {
+			isa = PBXGroup;
+			children = (
+				44CF83CCD89E8C8FC8294537 /* Assets.xcassets */,
+				4FBBC5814BEED56D54BBBE98 /* LifeXPWidget.entitlements */,
+				7224979E0D20F58A8746E56B /* LifeXPWidgetBundle.swift */,
+				005D3589F8343FC07238F350 /* StepsWidget.swift */,
+				A8C6A87F5386973B9D222C88 /* WeightWidget.swift */,
+			);
+			path = LifeXPWidget;
+			sourceTree = "<group>";
+		};
+		59D2C9CD7A3DA94224EEEF64 = {
+			isa = PBXGroup;
+			children = (
+				7EC00FC5888E12537BAE5322 /* LifeXP */,
+				4D140E285B605646920A70EB /* LifeXPWidget */,
+				BCDDCFDF45B977607F78E39B /* Shared */,
+				2A91C0D63B77E5626DED1145 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		7EC00FC5888E12537BAE5322 /* LifeXP */ = {
+			isa = PBXGroup;
+			children = (
+				9087C26CC408D534378ED234 /* Views */,
+				27FF85C6823A9CE6A7AB44C6 /* Assets.xcassets */,
+				9363F9D92BABB5BC2E2BAD4D /* ContentView.swift */,
+				E0E27052E9B5393E8BD0EC6D /* LifeXP.entitlements */,
+				66B376A8B3AD733709709028 /* LifeXPApp.swift */,
+			);
+			path = LifeXP;
+			sourceTree = "<group>";
+		};
+		9087C26CC408D534378ED234 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				F587CE499FB7ED6ABC2E09A4 /* SettingsView.swift */,
+				75A4ECF53283722BF446F60A /* StepsView.swift */,
+				43E64F34A614116D1EEC3801 /* WeightView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		BCDDCFDF45B977607F78E39B /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				47ED64B3B7849406FB401FF4 /* DataStore.swift */,
+				B928867C4600263F2E2F1C82 /* Models.swift */,
+				B9D13EF4C11969EDFCA64FB9 /* WithingsAPI.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AA85D687845DF7B863D8BFD3 /* LifeXP */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F6DAC33833883E340FF1BAD1 /* Build configuration list for PBXNativeTarget "LifeXP" */;
+			buildPhases = (
+				ACC288B7AF2381F2EC16643F /* Sources */,
+				18F89E7C918BE2311184C57F /* Resources */,
+				AF9071E1FB74800B464FAE1F /* Embed ExtensionKit Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CE228BCEC63CB93CC46DF809 /* PBXTargetDependency */,
+			);
+			name = LifeXP;
+			packageProductDependencies = (
+			);
+			productName = LifeXP;
+			productReference = EBCA9BEA76B0DD0F6C8C2E8B /* LifeXP.app */;
+			productType = "com.apple.product-type.application";
+		};
+		C3ABD4FBB474307C585EE5D1 /* LifeXPWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1049733B12BD150B23CCE2FE /* Build configuration list for PBXNativeTarget "LifeXPWidgetExtension" */;
+			buildPhases = (
+				661F28B4EBD8AC46B1929A09 /* Sources */,
+				FBAA87B784628BA4EC9F4A95 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LifeXPWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = LifeXPWidgetExtension;
+			productReference = C052DF8BE5CEF1605E924356 /* LifeXPWidgetExtension.appex */;
+			productType = "com.apple.product-type.extensionkit-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C8805837586838152E05189F /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					AA85D687845DF7B863D8BFD3 = {
+						DevelopmentTeam = 6525LR2Z8A;
+						ProvisioningStyle = Automatic;
+					};
+					C3ABD4FBB474307C585EE5D1 = {
+						DevelopmentTeam = 6525LR2Z8A;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 08D330849D10E9C1D9DD6AB6 /* Build configuration list for PBXProject "LifeXP" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 59D2C9CD7A3DA94224EEEF64;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 2A91C0D63B77E5626DED1145 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AA85D687845DF7B863D8BFD3 /* LifeXP */,
+				C3ABD4FBB474307C585EE5D1 /* LifeXPWidgetExtension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		18F89E7C918BE2311184C57F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E796EF685EADE629980A922E /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FBAA87B784628BA4EC9F4A95 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CFA77149FB233F0271D2DBAF /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		661F28B4EBD8AC46B1929A09 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E92DECC3194DD4EF1C53B65B /* DataStore.swift in Sources */,
+				B45F2607F5A1841CA1143585 /* LifeXPWidgetBundle.swift in Sources */,
+				27DA0BAC9569122D0D4B217B /* Models.swift in Sources */,
+				8329C71E6973ABE1DCD6D4C3 /* StepsWidget.swift in Sources */,
+				CC2B45CE2909B464F38B9E3C /* WeightWidget.swift in Sources */,
+				67BD607F2F47BF6842FA9D1A /* WithingsAPI.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ACC288B7AF2381F2EC16643F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2B92B6EC3404200BC1EFF799 /* ContentView.swift in Sources */,
+				DCC9B00ED5518F2BE3A5443F /* DataStore.swift in Sources */,
+				96B7358319A3B772F2089B90 /* LifeXPApp.swift in Sources */,
+				16B3691F0A3C0CEA6E5BAAA3 /* Models.swift in Sources */,
+				F5C5D2CA42BCC6E598155C86 /* SettingsView.swift in Sources */,
+				CF5166A0A8B50B4DA49213BD /* StepsView.swift in Sources */,
+				80C8891353C7CA407BB29C30 /* WeightView.swift in Sources */,
+				A74A919D58271C0C827F26FC /* WithingsAPI.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		CE228BCEC63CB93CC46DF809 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C3ABD4FBB474307C585EE5D1 /* LifeXPWidgetExtension */;
+			targetProxy = D08F38F9313E3C276847E813 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		3AE110BE4252F74EE10A2142 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = LifeXPWidget/LifeXPWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = LifeXPWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.lifexp.app.widget;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		57AC649968096E22E0DFDE07 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = LifeXP/LifeXP.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = LifeXP/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.lifexp.app;
+				PRODUCT_NAME = "Life XP";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		CCFECA4C62AE3FD5762B3276 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = LifeXPWidget/LifeXPWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = LifeXPWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.lifexp.app.widget;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		D00F0F2C8EC96D08A5FE7515 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 6525LR2Z8A;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		DB80DF36F68B4BD9B6EFB484 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 6525LR2Z8A;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		F2DF359CEFDFAA09A8F9DB05 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = LifeXP/LifeXP.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = LifeXP/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.lifexp.app;
+				PRODUCT_NAME = "Life XP";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		08D330849D10E9C1D9DD6AB6 /* Build configuration list for PBXProject "LifeXP" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DB80DF36F68B4BD9B6EFB484 /* Debug */,
+				D00F0F2C8EC96D08A5FE7515 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		1049733B12BD150B23CCE2FE /* Build configuration list for PBXNativeTarget "LifeXPWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3AE110BE4252F74EE10A2142 /* Debug */,
+				CCFECA4C62AE3FD5762B3276 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F6DAC33833883E340FF1BAD1 /* Build configuration list for PBXNativeTarget "LifeXP" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F2DF359CEFDFAA09A8F9DB05 /* Debug */,
+				57AC649968096E22E0DFDE07 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = C8805837586838152E05189F /* Project object */;
+}
