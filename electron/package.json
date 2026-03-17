@@ -10,5 +10,13 @@
   "dependencies": {
     "electron": "^33.0.0"
   },
-  "devDependencies": {}
+  "devDependencies": {},
+  "build": {
+    "protocols": [
+      {
+        "name": "Life XP",
+        "schemes": ["lifexp"]
+      }
+    ]
+  }
 }

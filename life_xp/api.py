@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import logging
 from contextlib import asynccontextmanager
+from urllib.parse import urlencode, urlparse, parse_qs
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from life_xp.database import fetch_all, fetch_one, get_db, insert, update
 from life_xp.models import (
@@ -180,6 +183,28 @@ async def chat_history(goal_id: int | None = None, limit: int = 50):
 
 # ── Sensors ───────────────────────────────────────────────────────────
 
+@app.get("/api/goals/{goal_id}/readings/daily")
+async def goal_readings_daily(goal_id: int, days: int = 112):
+    """Return one aggregated value per day for all sensors on this goal.
+    Takes the last reading of each day (sensors like Fitbit return cumulative totals)."""
+    from datetime import datetime, timedelta
+    cutoff = (datetime.now() - timedelta(days=days)).isoformat()
+    rows = await fetch_all(
+        db_conn,
+        """SELECT date(sr.created_at) as date, sr.value
+           FROM sensor_readings sr
+           JOIN sensor_configs sc ON sc.id = sr.sensor_id
+           WHERE sc.goal_id = ? AND sr.created_at >= ?
+           ORDER BY sr.created_at ASC""",
+        (goal_id, cutoff),
+    )
+    # Last value per day (rows are ASC so last write wins)
+    by_date: dict[str, str] = {}
+    for row in rows:
+        by_date[row["date"]] = row["value"]
+    return [{"date": k, "value": v} for k, v in sorted(by_date.items())]
+
+
 @app.get("/api/sensors")
 async def list_sensors(goal_id: int | None = None):
     if goal_id is not None:
@@ -214,6 +239,126 @@ async def poll_sensors():
     from life_xp.sensors.base import SensorRegistry
     results = await SensorRegistry.poll_all(db_conn)
     return {"polled": len(results), "results": results}
+
+
+# ── OAuth ─────────────────────────────────────────────────────────
+
+OAUTH_REDIRECT = "lifexp://oauth/callback"
+
+
+@app.get("/api/oauth/start/{sensor_id}")
+async def oauth_start(sensor_id: int):
+    """Return the authorization URL for the sensor's OAuth flow.
+    The renderer should open this URL in the system browser via openExternal()."""
+    sensor = await fetch_one(db_conn, "SELECT * FROM sensor_configs WHERE id = ?", (sensor_id,))
+    if not sensor:
+        raise HTTPException(404, "Sensor not found")
+
+    config = json.loads(sensor["config"])
+    oauth = config.get("oauth_config", config)  # some sensors store fields at top level
+
+    client_id   = oauth.get("client_id")
+    auth_url    = oauth.get("auth_url", "https://www.fitbit.com/oauth2/authorize")
+    scope       = oauth.get("scope", "activity")
+
+    if not client_id:
+        raise HTTPException(400, "Sensor has no client_id — cannot start OAuth")
+
+    params = {
+        "response_type": "code",
+        "client_id":     client_id,
+        "redirect_uri":  OAUTH_REDIRECT,
+        "scope":         scope,
+        "state":         str(sensor_id),   # encoded so the callback knows which sensor
+    }
+    return {"url": f"{auth_url}?{urlencode(params)}", "sensor_id": sensor_id}
+
+
+class OAuthExchangeRequest(BaseModel):
+    url:   str
+    code:  str | None = None
+    state: str | None = None
+
+
+@app.post("/api/oauth/exchange")
+async def oauth_exchange(req: OAuthExchangeRequest):
+    """Exchange an authorization code received via the lifexp:// deep-link for tokens.
+    Updates the matching sensor's config with the new Bearer token."""
+    # Extract code / state from the full URL if not supplied directly
+    code  = req.code
+    state = req.state
+    if not code and req.url:
+        parsed = urlparse(req.url)
+        qs     = parse_qs(parsed.query)
+        code   = (qs.get("code")  or [None])[0]
+        state  = (qs.get("state") or [None])[0]
+
+    if not code:
+        raise HTTPException(400, "No authorization code in request")
+
+    # Resolve which sensor is waiting for this callback
+    sensor = None
+    if state and state.isdigit():
+        sensor = await fetch_one(db_conn, "SELECT * FROM sensor_configs WHERE id = ?", (int(state),))
+    if not sensor:
+        # Fall back: pick the most recent sensor with oauth_config
+        rows = await fetch_all(
+            db_conn,
+            "SELECT * FROM sensor_configs WHERE config LIKE '%oauth_config%' OR config LIKE '%client_id%' ORDER BY created_at DESC LIMIT 1",
+        )
+        sensor = rows[0] if rows else None
+    if not sensor:
+        raise HTTPException(404, "No sensor found for OAuth callback")
+
+    config      = json.loads(sensor["config"])
+    oauth       = config.get("oauth_config", config)
+    client_id   = oauth.get("client_id")   or config.get("client_id")
+    client_secret = oauth.get("client_secret") or config.get("client_secret")
+    token_url   = oauth.get("token_url", "https://api.fitbit.com/oauth2/token")
+
+    if not client_id or not client_secret:
+        raise HTTPException(400, "Sensor config missing client_id or client_secret")
+
+    # Exchange code for tokens
+    credentials = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.post(
+            token_url,
+            headers={
+                "Authorization":  f"Basic {credentials}",
+                "Content-Type":   "application/x-www-form-urlencoded",
+            },
+            data={
+                "grant_type":   "authorization_code",
+                "code":         code,
+                "redirect_uri": OAUTH_REDIRECT,
+            },
+        )
+
+    if resp.status_code != 200:
+        raise HTTPException(400, f"Token exchange failed ({resp.status_code}): {resp.text}")
+
+    tokens        = resp.json()
+    access_token  = tokens.get("access_token")
+    refresh_token = tokens.get("refresh_token")
+    if not access_token:
+        raise HTTPException(400, f"No access_token in response: {tokens}")
+
+    # Persist new tokens — update headers, store refresh token, mark active
+    new_config = {**config}
+    new_config["headers"]       = {"Authorization": f"Bearer {access_token}"}
+    new_config["refresh_token"] = refresh_token
+    new_config["auth_type"]     = "bearer"
+    new_config.pop("oauth_config", None)          # clean up one-time flow data
+    new_config.pop("authorization_code", None)
+
+    await update(db_conn, "sensor_configs", sensor["id"], {
+        "config": json.dumps(new_config),
+        "status": "active",
+    })
+
+    logger.info("OAuth exchange complete for sensor %d", sensor["id"])
+    return {"ok": True, "sensor_id": sensor["id"], "message": "Connected — sensor is now active"}
 
 
 # ── Settings ──────────────────────────────────────────────────────────

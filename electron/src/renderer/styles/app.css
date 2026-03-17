@@ -183,11 +183,17 @@ body {
 
 .card:hover { border-color: var(--border-mid); }
 
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+
 .card-title {
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.01em;
-  margin-bottom: 6px;
   color: var(--text-1);
 }
 
@@ -196,6 +202,54 @@ body {
   color: var(--text-2);
   line-height: 1.5;
   margin-bottom: 14px;
+}
+
+/* ── Goal graph ──────────────────────────────────────────────────── */
+
+.goal-graph {
+  margin: 14px 0 4px;
+}
+
+.today-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.today-target {
+  font-weight: 400;
+  color: var(--text-3);
+}
+
+/* ── Sub-goal toggle ─────────────────────────────────────────────── */
+
+.sub-goals-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-size: 12px;
+  font-family: var(--font);
+  cursor: pointer;
+  padding: 5px 0 2px;
+  transition: color 0.12s;
+}
+
+.sub-goals-toggle:hover { color: var(--text-2); }
+
+/* ── Card footer ─────────────────────────────────────────────────── */
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
 }
 
 /* ── Badges ────────────────────────────────────────────────────── */
@@ -582,6 +636,37 @@ body {
   font-size: 13px;
   color: var(--text-2);
 }
+
+/* ── Toast notifications ───────────────────────────────────────── */
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  padding: 10px 18px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--elevated);
+  border: 1px solid var(--border-mid);
+  color: var(--text-1);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+  z-index: 2000;
+  white-space: nowrap;
+}
+
+.toast.toast-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast-success { border-color: rgba(34,197,94,0.4);  color: var(--green); }
+.toast-error   { border-color: rgba(239,68,68,0.4);   color: var(--red); }
+.toast-info    { border-color: rgba(59,130,246,0.4);  color: var(--accent); }
 
 /* ── XP popup ──────────────────────────────────────────────────── */
 
