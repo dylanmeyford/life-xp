@@ -33,8 +33,8 @@ schemes:
         LifeXP: all
     run:
       config: Debug
-      executable: LifeXP
-      askForAppToLaunch: false
+      executable: WidgetKit Simulator
+      launchAutomaticallySubstyle: 2
 
 targets:
   LifeXP:
