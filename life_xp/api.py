@@ -5,8 +5,11 @@ from __future__ import annotations
 import base64
 import json
 import logging
+import time
 from contextlib import asynccontextmanager
 from urllib.parse import urlencode, urlparse, parse_qs
+
+import httpx
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, HTTPException
@@ -59,6 +62,26 @@ async def _scheduled_poll():
         logger.error("Scheduled poll failed: %s", exc)
 
 
+async def _scheduled_token_refresh():
+    """Proactively refresh tokens for API sensors nearing expiration."""
+    if db_conn is None:
+        return
+    from life_xp.token_refresh import refresh_token_for_sensor, token_needs_refresh
+    try:
+        sensors = await fetch_all(
+            db_conn, "SELECT * FROM sensor_configs WHERE status = 'active' AND sensor_type = 'api'"
+        )
+        for s in sensors:
+            config = json.loads(s["config"])
+            if token_needs_refresh(config):
+                logger.info("Proactively refreshing token for sensor %d", s["id"])
+                success = await refresh_token_for_sensor(db_conn, s["id"])
+                if not success:
+                    logger.warning("Token refresh failed for sensor %d", s["id"])
+    except Exception as exc:
+        logger.error("Scheduled token refresh failed: %s", exc)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global db_conn, _scheduler
@@ -70,8 +93,9 @@ async def lifespan(app: FastAPI):
 
     _scheduler = AsyncIOScheduler()
     _scheduler.add_job(_scheduled_poll, "interval", minutes=60, id="sensor_poll")
+    _scheduler.add_job(_scheduled_token_refresh, "interval", minutes=15, id="token_refresh")
     _scheduler.start()
-    logger.info("Sensor scheduler started — polling every 60 minutes")
+    logger.info("Sensor scheduler started — polling every 60 min, token refresh every 15 min")
 
     yield
 
@@ -378,7 +402,15 @@ async def oauth_exchange(req: OAuthExchangeRequest):
     new_config = {**config}
     new_config["headers"]       = {"Authorization": f"Bearer {access_token}"}
     new_config["refresh_token"] = refresh_token
-    new_config["auth_type"]     = "bearer"
+    new_config["auth_type"]     = "oauth"
+    new_config["token_url"]     = token_url
+    new_config["client_id"]     = client_id
+    new_config["client_secret"] = client_secret
+
+    expires_in = tokens.get("expires_in")
+    if expires_in is not None:
+        new_config["token_expires_at"] = time.time() + int(expires_in)
+
     new_config.pop("oauth_config", None)          # clean up one-time flow data
     new_config.pop("authorization_code", None)
 

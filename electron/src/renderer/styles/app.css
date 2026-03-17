@@ -343,6 +343,25 @@ body {
   background: var(--green-dim);
   color: var(--green);
   border: 1px solid rgba(34, 197, 94, 0.2);
+  cursor: default;
+}
+
+.sensor-pill.sensor-failed {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--red);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.sensor-pill.sensor-testing {
+  background: rgba(234, 179, 8, 0.1);
+  color: #eab308;
+  border-color: rgba(234, 179, 8, 0.25);
+}
+
+.sensor-pill.sensor-pending {
+  background: var(--surface);
+  color: var(--text-3);
+  border-color: var(--border);
 }
 
 .goal-sync-time {
@@ -458,6 +477,50 @@ body {
 .chat-msg.question .msg-bubble {
   background: var(--surface);
   border: 1px solid var(--border-mid);
+}
+
+/* Code blocks inside chat messages */
+.msg-bubble .code-block {
+  margin: 8px 0;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.msg-bubble .code-block .code-lang {
+  display: block;
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+  background: var(--elevated);
+}
+
+.msg-bubble .code-block pre {
+  margin: 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+}
+
+.msg-bubble .code-block code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-2);
+  white-space: pre;
+}
+
+.msg-bubble .inline-code {
+  font-family: var(--font-mono);
+  background: var(--elevated);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text-2);
 }
 
 .question-options {
@@ -673,6 +736,43 @@ body {
 .toast-success { border-color: rgba(34,197,94,0.4);  color: var(--green); }
 .toast-error   { border-color: rgba(239,68,68,0.4);   color: var(--red); }
 .toast-info    { border-color: rgba(59,130,246,0.4);  color: var(--accent); }
+
+.toast.has-details {
+  pointer-events: auto;
+  white-space: normal;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.toast-details-toggle {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+  text-align: left;
+}
+
+.toast-details-toggle:hover { opacity: 1; }
+
+.toast-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 400;
+  border-top: 1px solid var(--border);
+  padding-top: 6px;
+}
+
+.toast-detail-item { padding: 1px 0; }
+.toast-detail-item.detail-ok { color: var(--green); }
+.toast-detail-item.detail-error { color: var(--red); }
 
 /* ── XP popup ──────────────────────────────────────────────────── */
 

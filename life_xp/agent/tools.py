@@ -110,7 +110,8 @@ TOOL_DEFINITIONS = [
                     "description": (
                         "Configuration for the sensor. Structure depends on type:\n"
                         "- swift_health: {metric: 'weight'|'steps'|'heart_rate', unit: 'kg'|'lbs'|'count'}\n"
-                        "- api: {url, method, headers, auth_type, response_path}\n"
+                        "- api: {url, method, headers, auth_type ('oauth'|'jwt'|'api_key'|'custom'), "
+                        "response_path, client_id, client_secret, token_url, refresh_token, token_expires_at}\n"
                         "- cli: {command, parse_regex, schedule_minutes}\n"
                         "- file_watch: {path, parse_format}\n"
                         "- manual: {prompt, unit}"
