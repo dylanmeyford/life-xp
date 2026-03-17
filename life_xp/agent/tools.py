@@ -318,6 +318,7 @@ async def _test_cli_sensor(config: dict) -> dict:
 async def _test_api_sensor(config: dict) -> dict:
     """Test an API-based sensor."""
     import httpx
+    from life_xp.sensors.api_sensor import extract_path
     url = config.get("url", "")
     method = config.get("method", "GET").upper()
     headers = config.get("headers", {})
@@ -326,11 +327,9 @@ async def _test_api_sensor(config: dict) -> dict:
         resp = await client.request(method, url, headers=headers)
         resp.raise_for_status()
         data = resp.json() if "json" in resp.headers.get("content-type", "") else resp.text
-        # Extract value using response_path if provided
         path = config.get("response_path", "")
-        if path and isinstance(data, dict):
-            for key in path.split("."):
-                data = data.get(key, data) if isinstance(data, dict) else data
+        if path:
+            data = extract_path(data, path)
         return {"value": str(data)[:500], "source": "api"}
 
 

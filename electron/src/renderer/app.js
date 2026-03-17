@@ -58,7 +58,7 @@ function showXPPopup(amount) {
   popup.className = "xp-popup";
   popup.textContent = `+${amount} XP`;
   document.body.appendChild(popup);
-  setTimeout(() => popup.remove(), 2200);
+  setTimeout(() => popup.remove(), 2400);
 }
 
 // ── Goals page ──────────────────────────────────────────────────────
@@ -96,11 +96,15 @@ async function refreshGoals() {
           )
           .join("");
 
+        const sensorLabel = { swift_health: "Apple Health", api: "API", cli: "CLI", manual: "Manual" };
         const sensorHtml = (goal.sensors || [])
-          .map(
-            (s) =>
-              `<span class="sensor-pill badge-${s.status}">${s.sensor_type} (${s.status})</span>`
-          )
+          .filter((s) => s.status === "active")
+          .map((s) => {
+            const label = sensorLabel[s.sensor_type] || s.sensor_type;
+            const val = s.last_value && !s.last_value.startsWith("{") && !s.last_value.includes("error")
+              ? ` · ${s.last_value}` : "";
+            return `<span class="sensor-pill badge-active">📡 ${label}${val}</span>`;
+          })
           .join("");
 
         html += `
@@ -393,7 +397,7 @@ async function refreshXP() {
       )
       .join("");
 
-    page.innerHTML = `<h2 style="margin-bottom:16px">XP History</h2><div class="card" style="padding:0">${entries}</div>`;
+    page.innerHTML = `<h2 style="margin-bottom:20px;font-size:16px;font-weight:600;letter-spacing:-0.01em">XP History</h2><div class="card" style="padding:0">${entries}</div>`;
   } catch {
     page.innerHTML = `<div class="empty-state"><p>Cannot load XP history.</p></div>`;
   }

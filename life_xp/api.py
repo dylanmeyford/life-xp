@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
+import logging
 from contextlib import asynccontextmanager
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -20,19 +22,44 @@ from life_xp.models import (
 )
 from life_xp.xp import get_player_stats, get_xp_history
 
+logger = logging.getLogger(__name__)
+
 # ── Lifespan ──────────────────────────────────────────────────────────
 
 db_conn = None
+_scheduler: AsyncIOScheduler | None = None
+
+
+async def _scheduled_poll():
+    """Poll all active sensors — called by the scheduler."""
+    if db_conn is None:
+        return
+    from life_xp.sensors.base import SensorRegistry
+    try:
+        results = await SensorRegistry.poll_all(db_conn)
+        if results:
+            logger.info("Scheduled poll: %d sensor(s) updated", len(results))
+    except Exception as exc:
+        logger.error("Scheduled poll failed: %s", exc)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global db_conn
+    global db_conn, _scheduler
     db_conn = await get_db()
     # Import sensors to register them
     import life_xp.sensors.health
     import life_xp.sensors.cli_sensor
     import life_xp.sensors.api_sensor
+
+    _scheduler = AsyncIOScheduler()
+    _scheduler.add_job(_scheduled_poll, "interval", minutes=60, id="sensor_poll")
+    _scheduler.start()
+    logger.info("Sensor scheduler started — polling every 60 minutes")
+
     yield
+
+    _scheduler.shutdown(wait=False)
     if db_conn:
         await db_conn.close()
 
@@ -169,6 +196,16 @@ async def sensor_readings(sensor_id: int, limit: int = 100):
         "SELECT * FROM sensor_readings WHERE sensor_id = ? ORDER BY created_at DESC LIMIT ?",
         (sensor_id, limit),
     )
+
+
+@app.delete("/api/sensors/{sensor_id}")
+async def delete_sensor(sensor_id: int):
+    sensor = await fetch_one(db_conn, "SELECT id FROM sensor_configs WHERE id = ?", (sensor_id,))
+    if not sensor:
+        raise HTTPException(404, "Sensor not found")
+    await db_conn.execute("DELETE FROM sensor_configs WHERE id = ?", (sensor_id,))
+    await db_conn.commit()
+    return {"ok": True}
 
 
 @app.post("/api/sensors/poll")
