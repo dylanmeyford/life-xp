@@ -24,6 +24,8 @@ class GoalOut(BaseModel):
     xp_reward: int
     created_at: str
     completed_at: str | None = None
+    auto_tracked: bool = False
+    last_synced_at: str | None = None
     sub_goals: list[SubGoalOut] = []
     sensors: list[SensorOut] = []
 

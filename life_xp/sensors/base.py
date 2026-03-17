@@ -83,3 +83,21 @@ class SensorRegistry:
                 if result:
                     results.append({"sensor_id": s["id"], "goal_id": s["goal_id"], **result})
         return results
+
+    @classmethod
+    async def poll_goal(cls, db, goal_id: int) -> list[dict]:
+        """Poll all active sensors attached to a specific goal."""
+        sensors = await fetch_all(
+            db,
+            "SELECT * FROM sensor_configs WHERE status = 'active' AND goal_id = ?",
+            (goal_id,),
+        )
+        results = []
+        for s in sensors:
+            config = json.loads(s["config"])
+            sensor = cls.create(s["sensor_type"], s["id"], s["goal_id"], config)
+            if sensor:
+                result = await sensor.poll(db)
+                if result:
+                    results.append({"sensor_id": s["id"], "goal_id": s["goal_id"], **result})
+        return results

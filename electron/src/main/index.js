@@ -3,13 +3,11 @@ const path = require("path");
 const http = require("http");
 
 // ── Protocol registration ─────────────────────────────────────────
-// In development Electron is invoked directly, so we pass the script path too.
-if (process.defaultApp) {
-  if (process.argv.length >= 2) {
-    app.setAsDefaultProtocolClient("lifexp", process.execPath, [
-      path.resolve(process.argv[1]),
-    ]);
-  }
+// In development, register the protocol with an explicit app path so
+// macOS doesn't launch a plain Electron shell window.
+if (!app.isPackaged) {
+  const appPathArg = path.resolve(process.argv[1] || app.getAppPath());
+  app.setAsDefaultProtocolClient("lifexp", process.execPath, [appPathArg]);
 } else {
   app.setAsDefaultProtocolClient("lifexp");
 }
@@ -18,15 +16,38 @@ if (process.defaultApp) {
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
+  process.exit(0);
 }
 
 // ── State ─────────────────────────────────────────────────────────
 let mainWindow = null;
 let pendingDeepLink = null;
 
+function parseLifeXpDeepLink(rawUrl) {
+  if (!rawUrl) return null;
+  try {
+    const parsed = new URL(rawUrl);
+    if ((parsed.protocol || "").toLowerCase() !== "lifexp:") return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function getDeepLinkRoute(parsed) {
+  const host = (parsed.hostname || "").toLowerCase();
+  const pathname = ((parsed.pathname || "").toLowerCase() || "/").replace(/\/+$/, "") || "/";
+  return host ? `/${host}${pathname}` : pathname;
+}
+
+function findDeepLinkArg(args = []) {
+  return args.find((arg) => /^lifexp:\/\//i.test(arg)) || null;
+}
+
 // ── Deep-link handler ─────────────────────────────────────────────
 function handleDeepLink(url) {
-  if (!url || !url.startsWith("lifexp://")) return;
+  const parsed = parseLifeXpDeepLink(url);
+  if (!parsed) return;
 
   if (!mainWindow || mainWindow.isDestroyed()) {
     pendingDeepLink = url;
@@ -40,10 +61,7 @@ function handleDeepLink(url) {
   mainWindow.webContents.send("deep-link", url);
 
   // Parse and forward OAuth callbacks to the Python backend
-  let parsed;
-  try { parsed = new URL(url); } catch { return; }
-
-  if (parsed.hostname === "oauth" && parsed.pathname === "/callback") {
+  if (getDeepLinkRoute(parsed) === "/oauth/callback") {
     const code  = parsed.searchParams.get("code");
     const state = parsed.searchParams.get("state");
     if (!code) return;
@@ -92,7 +110,7 @@ app.on("open-url", (event, url) => {
 
 // macOS — deep link when app launches cold (URL arrives as argv on Windows/Linux)
 app.on("second-instance", (_, commandLine) => {
-  const url = commandLine.find((arg) => arg.startsWith("lifexp://"));
+  const url = findDeepLinkArg(commandLine);
   if (url) handleDeepLink(url);
   if (mainWindow) {
     if (mainWindow.isMinimized()) mainWindow.restore();
@@ -138,7 +156,7 @@ function createWindow() {
 
 app.whenReady().then(() => {
   // Check if launched via cold deep-link (macOS passes it as argv on first launch too)
-  const coldUrl = process.argv.find((a) => a.startsWith("lifexp://"));
+  const coldUrl = findDeepLinkArg(process.argv);
   if (coldUrl) pendingDeepLink = coldUrl;
 
   createWindow();

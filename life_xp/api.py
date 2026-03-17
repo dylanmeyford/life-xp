@@ -27,6 +27,19 @@ from life_xp.xp import get_player_stats, get_xp_history
 
 logger = logging.getLogger(__name__)
 
+
+def _goal_sync_metadata(sensors: list[dict]) -> dict:
+    """Return goal-level sync metadata derived from active sensors."""
+    auto_sensors = [
+        s for s in sensors
+        if s.get("status") == "active" and s.get("sensor_type") != "manual"
+    ]
+    last_runs = [s.get("last_run") for s in auto_sensors if s.get("last_run")]
+    return {
+        "auto_tracked": bool(auto_sensors),
+        "last_synced_at": max(last_runs) if last_runs else None,
+    }
+
 # ── Lifespan ──────────────────────────────────────────────────────────
 
 db_conn = None
@@ -106,7 +119,12 @@ async def list_goals(status: str = "active"):
         sensors = await fetch_all(
             db_conn, "SELECT * FROM sensor_configs WHERE goal_id = ?", (g["id"],)
         )
-        result.append({**g, "sub_goals": sub_goals, "sensors": sensors})
+        result.append({
+            **g,
+            "sub_goals": sub_goals,
+            "sensors": sensors,
+            **_goal_sync_metadata(sensors),
+        })
     return result
 
 
@@ -127,6 +145,7 @@ async def get_goal(goal_id: int):
     goal["sensors"] = await fetch_all(
         db_conn, "SELECT * FROM sensor_configs WHERE goal_id = ?", (goal_id,)
     )
+    goal.update(_goal_sync_metadata(goal["sensors"]))
     return goal
 
 
@@ -239,6 +258,17 @@ async def poll_sensors():
     from life_xp.sensors.base import SensorRegistry
     results = await SensorRegistry.poll_all(db_conn)
     return {"polled": len(results), "results": results}
+
+
+@app.post("/api/goals/{goal_id}/sync")
+async def sync_goal(goal_id: int):
+    """Manually trigger all active sensors for one goal."""
+    goal = await fetch_one(db_conn, "SELECT id FROM goals WHERE id = ?", (goal_id,))
+    if not goal:
+        raise HTTPException(404, "Goal not found")
+    from life_xp.sensors.base import SensorRegistry
+    results = await SensorRegistry.poll_goal(db_conn, goal_id)
+    return {"goal_id": goal_id, "polled": len(results), "results": results}
 
 
 # ── OAuth ─────────────────────────────────────────────────────────

@@ -75,6 +75,30 @@ function parseTargetNum(str) {
   return isNaN(n) ? null : n;
 }
 
+function formatLastSynced(ts) {
+  if (!ts) return "Last synced: not yet";
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return "Last synced: unknown";
+  return `Last synced: ${d.toLocaleString()}`;
+}
+
+function deriveGoalSyncMeta(goal) {
+  const sensors = goal.sensors || [];
+  const autoSensors = sensors.filter(
+    (s) => s.status === "active" && s.sensor_type !== "manual"
+  );
+  const autoTracked = typeof goal.auto_tracked === "boolean"
+    ? goal.auto_tracked
+    : autoSensors.length > 0;
+  const latestFromSensors = autoSensors
+    .map((s) => s.last_run)
+    .filter(Boolean)
+    .sort()
+    .at(-1) || null;
+  const lastSyncedAt = goal.last_synced_at || latestFromSensors;
+  return { autoTracked, lastSyncedAt };
+}
+
 // 365-day GitHub-style dot grid for daily habits
 function renderDotGraph(readings, target) {
   const DAYS = 365, COLS = Math.ceil(DAYS / 7), CELL = 10, GAP = 2, STEP = CELL + GAP;
@@ -267,6 +291,10 @@ async function refreshGoals() {
           .filter((s) => s.status === "active")
           .map((s) => `<span class="sensor-pill">📡 ${sensorLabel[s.sensor_type] || s.sensor_type}</span>`)
           .join("");
+        const { autoTracked, lastSyncedAt } = deriveGoalSyncMeta(goal);
+        const syncHtml = autoTracked
+          ? `<span class="goal-sync-time">${formatLastSynced(lastSyncedAt)}</span>`
+          : "";
 
         html += `
           <div class="card" data-goal-id="${goal.id}">
@@ -280,8 +308,14 @@ async function refreshGoals() {
             ${graphHtml ? `<div class="goal-graph">${graphHtml}</div>` : ""}
             ${subGoalsHtml}
             <div class="card-footer">
-              <div style="display:flex;gap:6px;flex-wrap:wrap">${sensorHtml}</div>
-              <button class="btn btn-secondary" onclick="openGoalChat(${goal.id})">Coach</button>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                ${sensorHtml}
+                ${syncHtml}
+              </div>
+              <div style="display:flex;gap:8px">
+                ${autoTracked ? `<button class="btn btn-secondary" onclick="syncGoal(${goal.id}, this)">Sync</button>` : ""}
+                <button class="btn btn-secondary" onclick="openGoalChat(${goal.id})">Coach</button>
+              </div>
             </div>
           </div>
         `;
@@ -351,6 +385,47 @@ async function refreshGoals() {
         <p>Make sure the Life XP server is running: <code>life-xp serve</code></p>
       </div>
     `;
+  }
+}
+
+async function syncGoal(goalId, btn) {
+  const originalText = btn ? btn.textContent : "Sync";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Syncing...";
+  }
+  try {
+    let result;
+    let usedFallback = false;
+    try {
+      // Preferred: goal-scoped sync on newer backend.
+      result = await api(`/api/goals/${goalId}/sync`, { method: "POST" });
+    } catch (err) {
+      // Backward compatibility: older backend may not have /api/goals/{id}/sync.
+      if (String(err.message || "").includes("API 404")) {
+        usedFallback = true;
+        result = await api("/api/sensors/poll", { method: "POST" });
+      } else {
+        throw err;
+      }
+    }
+
+    const n = Number(result?.polled || 0);
+    showToast(
+      n > 0
+        ? `Synced ${n} sensor${n !== 1 ? "s" : ""}${usedFallback ? " (all goals)" : ""}.`
+        : "No active sensors to sync.",
+      "success"
+    );
+    await refreshGoals();
+    await refreshStats();
+  } catch (err) {
+    showToast(`Sync failed: ${err.message}`, "error");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
   }
 }
 
@@ -522,6 +597,7 @@ async function answerQuestion(answer) {
 // Make it globally accessible
 window.answerQuestion = answerQuestion;
 window.openGoalChat = openGoalChat;
+window.syncGoal = syncGoal;
 
 function formatMessage(text) {
   if (!text) return "";
@@ -639,12 +715,27 @@ function refreshPage(page) {
 
 // ── Deep-link / OAuth handlers ───────────────────────────────────────
 
+function isOAuthCallbackDeepLink(url) {
+  try {
+    const parsed = new URL(url);
+    if ((parsed.protocol || "").toLowerCase() !== "lifexp:") return false;
+    const host = (parsed.hostname || "").toLowerCase();
+    const pathname = ((parsed.pathname || "").toLowerCase() || "/").replace(/\/+$/, "") || "/";
+    const route = host ? `/${host}${pathname}` : pathname;
+    return route === "/oauth/callback";
+  } catch {
+    return false;
+  }
+}
+
 if (window.lifeXP?.onDeepLink) {
   window.lifeXP.onDeepLink((url) => {
-    // Show a transient "completing auth…" banner while the main process
-    // calls /api/oauth/exchange in the background.
-    if (url.includes("oauth/callback")) {
-      showToast("Completing authentication…", "info");
+    // Surface the received URL to make deep-link handling visible.
+    showToast(`Deep link opened: ${url}`, "info");
+
+    // Keep explicit auth progress feedback for OAuth callbacks.
+    if (isOAuthCallbackDeepLink(url)) {
+      showToast("Completing authentication...", "info");
     }
   });
 }
