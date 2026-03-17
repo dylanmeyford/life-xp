@@ -82,6 +82,31 @@ async def _scheduled_token_refresh():
         logger.error("Scheduled token refresh failed: %s", exc)
 
 
+async def _scheduled_streak_decay():
+    """Decay broken streaks daily at 1 AM."""
+    if db_conn is None:
+        return
+    try:
+        from life_xp.streaks import decay_streaks
+        broken = await decay_streaks(db_conn)
+        if broken:
+            logger.info("Streak decay: %d streak(s) broken", broken)
+    except Exception as exc:
+        logger.error("Streak decay failed: %s", exc)
+
+
+async def _scheduled_quest_generation():
+    """Pre-generate daily quests at midnight."""
+    if db_conn is None:
+        return
+    try:
+        from life_xp.quests import generate_daily_quests
+        quests = await generate_daily_quests(db_conn)
+        logger.info("Generated %d daily quests", len(quests))
+    except Exception as exc:
+        logger.error("Quest generation failed: %s", exc)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global db_conn, _scheduler
@@ -94,8 +119,10 @@ async def lifespan(app: FastAPI):
     _scheduler = AsyncIOScheduler()
     _scheduler.add_job(_scheduled_poll, "interval", minutes=60, id="sensor_poll")
     _scheduler.add_job(_scheduled_token_refresh, "interval", minutes=15, id="token_refresh")
+    _scheduler.add_job(_scheduled_streak_decay, "cron", hour=1, minute=0, id="streak_decay")
+    _scheduler.add_job(_scheduled_quest_generation, "cron", hour=0, minute=5, id="quest_gen")
     _scheduler.start()
-    logger.info("Sensor scheduler started — polling every 60 min, token refresh every 15 min")
+    logger.info("Scheduler started — polls:60m, tokens:15m, streaks:daily@1am, quests:daily@midnight")
 
     yield
 
@@ -421,6 +448,64 @@ async def oauth_exchange(req: OAuthExchangeRequest):
 
     logger.info("OAuth exchange complete for sensor %d", sensor["id"])
     return {"ok": True, "sensor_id": sensor["id"], "message": "Connected — sensor is now active"}
+
+
+# ── Streaks ──────────────────────────────────────────────────────────
+
+@app.get("/api/streaks")
+async def list_streaks():
+    from life_xp.streaks import get_all_streaks
+    return await get_all_streaks(db_conn)
+
+
+@app.get("/api/streaks/{goal_id}")
+async def get_goal_streak(goal_id: int):
+    from life_xp.streaks import get_streak
+    return await get_streak(db_conn, goal_id)
+
+
+@app.post("/api/streaks/{goal_id}/checkin")
+async def streak_checkin(goal_id: int):
+    from life_xp.streaks import checkin
+    from life_xp.achievements import check_and_unlock
+    result = await checkin(db_conn, goal_id)
+    unlocked = await check_and_unlock(db_conn)
+    return {**result, "achievements_unlocked": unlocked}
+
+
+@app.post("/api/streaks/{goal_id}/freeze")
+async def streak_freeze(goal_id: int):
+    from life_xp.streaks import freeze_streak
+    return await freeze_streak(db_conn, goal_id)
+
+
+# ── Achievements ─────────────────────────────────────────────────────
+
+@app.get("/api/achievements")
+async def list_achievements():
+    from life_xp.achievements import get_all_achievements
+    return await get_all_achievements(db_conn)
+
+
+@app.post("/api/achievements/check")
+async def check_achievements():
+    from life_xp.achievements import check_and_unlock
+    unlocked = await check_and_unlock(db_conn)
+    return {"newly_unlocked": unlocked, "count": len(unlocked)}
+
+
+# ── Daily Quests ─────────────────────────────────────────────────────
+
+@app.get("/api/quests/daily")
+async def daily_quests():
+    from life_xp.quests import get_todays_quests
+    return await get_todays_quests(db_conn)
+
+
+@app.post("/api/quests/{quest_id}/complete")
+async def quest_complete(quest_id: int):
+    from life_xp.quests import complete_quest
+    return await complete_quest(db_conn, quest_id)
 
 
 # ── Settings ──────────────────────────────────────────────────────────

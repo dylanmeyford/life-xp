@@ -79,6 +79,39 @@ CREATE TABLE IF NOT EXISTS user_settings (
     key         TEXT PRIMARY KEY,
     value       TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS streaks (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    goal_id     INTEGER NOT NULL REFERENCES goals(id) ON DELETE CASCADE,
+    current     INTEGER DEFAULT 0,
+    longest     INTEGER DEFAULT 0,
+    last_checkin TEXT,                -- date (YYYY-MM-DD) of last check-in
+    frozen_until TEXT,                -- date until which streak is frozen
+    created_at  TEXT DEFAULT (datetime('now')),
+    UNIQUE(goal_id)
+);
+
+CREATE TABLE IF NOT EXISTS achievements (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    key         TEXT NOT NULL UNIQUE, -- e.g. "first_goal", "streak_7"
+    title       TEXT NOT NULL,
+    description TEXT,
+    icon        TEXT DEFAULT '',      -- emoji icon
+    xp_reward   INTEGER DEFAULT 100,
+    unlocked_at TEXT                  -- NULL if locked
+);
+
+CREATE TABLE IF NOT EXISTS daily_quests (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    title       TEXT NOT NULL,
+    description TEXT,
+    xp_reward   INTEGER DEFAULT 25,
+    goal_id     INTEGER REFERENCES goals(id) ON DELETE SET NULL,
+    status      TEXT DEFAULT 'active',  -- active | completed | expired
+    quest_date  TEXT NOT NULL,           -- YYYY-MM-DD
+    created_at  TEXT DEFAULT (datetime('now')),
+    completed_at TEXT
+);
 """
 
 

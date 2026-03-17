@@ -98,6 +98,43 @@ class AgentQuestionOut(BaseModel):
 
 # ── Settings ─────────────────────────────────────────────────────────
 
+# ── Streaks ─────────────────────────────────────────────────────────
+
+class StreakOut(BaseModel):
+    goal_id: int
+    current: int
+    longest: int
+    last_checkin: str | None
+    multiplier: float
+    frozen_until: str | None = None
+
+
+# ── Achievements ────────────────────────────────────────────────────
+
+class AchievementOut(BaseModel):
+    id: int
+    key: str
+    title: str
+    description: str | None
+    icon: str
+    xp_reward: int
+    unlocked_at: str | None
+
+
+# ── Daily Quests ────────────────────────────────────────────────────
+
+class QuestOut(BaseModel):
+    id: int
+    title: str
+    description: str | None
+    xp_reward: int
+    goal_id: int | None
+    status: str
+    quest_date: str
+
+
+# ── Settings ────────────────────────────────────────────────────────
+
 class SettingUpdate(BaseModel):
     key: str
     value: str
